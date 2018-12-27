@@ -104,7 +104,7 @@ class Pulse(object):
         elif self.shape == PulseShape.RAMP:
             duration = 2 * self.width + self.plateau
         elif self.shape == PulseShape.GAUSSIAN:
-            duration = self.truncation_range * self.width + self.plateau
+            duration = self.truncation_range * self.width / np.sqrt(2 * np.pi) + self.plateau
         elif self.shape == PulseShape.CZ:
             duration = self.width + self.plateau
         elif self.shape == PulseShape.COSINE:
