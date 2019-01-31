@@ -6,6 +6,8 @@ import numpy as np
 import cliffords
 import copy
 
+import itertools
+
 from gates import Gate
 from sequence import Sequence
 
@@ -387,7 +389,8 @@ class SingleQubit_RB(Sequence):
                 multi_gate_seq.append(single_gate_seq)
 
             # transpose list of lists
-            multi_gate_seq = list(map(list, zip(*multi_gate_seq)))
+            multi_gate_seq = list(map(list, itertools.zip_longest(*multi_gate_seq, fillvalue= Gate.I)))
+
             self.add_gates(multi_gate_seq)
             self.prev_gate_seq = multi_gate_seq
         else:
@@ -533,6 +536,7 @@ class TwoQubit_RB(Sequence):
             interleaved_gate = config['Interleaved 2-QB Gate']
         else:
             interleaved_gate = np.inf
+        write_seq = config['write sequences as txt file']
 
         # generate new randomized clifford gates only if configuration changes
         if (self.prev_sequence != sequence or
@@ -574,6 +578,8 @@ class TwoQubit_RB(Sequence):
                         gate_seq_2.append(Gate.I)
 
 
+            if (write_seq == True):
+
             # get recovery gate seq
             (recovery_seq_1, recovery_seq_2) = self.get_recovery_gate(
                 gate_seq_1, gate_seq_2, config)
@@ -588,6 +594,8 @@ class TwoQubit_RB(Sequence):
             # log.info('The probability amplitude of the final state vector: ' + str(np.matrix(psi).flatten()))
             # log.info('The population of the ground state after the gate sequence: %.4f'%(np.abs(psi[0,0])**2))
             # log.info('-------------------------------------------')
+
+
             # Assign two qubit gate sequence to where we want
             if (self.n_qubit > qubits_to_benchmark[0]):
                 for i in range(qubits_to_benchmark[0] - 1):
@@ -602,7 +610,7 @@ class TwoQubit_RB(Sequence):
                     '"Qubits to Benchmark"')
 
             # transpose list of lists
-            multi_gate_seq = list(map(list, zip(*multi_gate_seq)))
+            multi_gate_seq = list(map(list, itertools.zip_longest(*multi_gate_seq, fillvalue= Gate.I)))
 
             # self.add_gates(multi_gate_seq)
             for gates in multi_gate_seq:
@@ -736,7 +744,6 @@ class TwoQubit_RB(Sequence):
 
         # Search the recovery gate in two Qubit clifford group
         find_cheapest = config['Find the cheapest recovery Clifford']
-
         cheapest_recovery_seq_1 = []
         cheapest_recovery_seq_2 = []
         if (find_cheapest == True):
