@@ -577,23 +577,33 @@ class TwoQubit_RB(Sequence):
                         gate_seq_1.append(Gate.I)
                         gate_seq_2.append(Gate.I)
 
-
-            if (write_seq == True):
-
             # get recovery gate seq
             (recovery_seq_1, recovery_seq_2) = self.get_recovery_gate(
                 gate_seq_1, gate_seq_2, config)
             gate_seq_1.extend(recovery_seq_1)
             gate_seq_2.extend(recovery_seq_2)
 
+            # write sequence as txt file.
+            if write_seq == True:
+                import os
+                from datetime import datetime
+                directory = os.path.join(path_currentdir,'2QB_RB_seq')
+                if not os.path.exists(directory):
+                    os.makedirs(directory)
+                filename = datetime.utcnow().strftime('%Y-%m-%d %H-%M-%S-%f')[:-3] + '_N_cliffords=%d_seed=%d.txt'%(N_cliffords,randomize)
+                filepath = os.path.join(directory,filename)
+                with open(filepath, "w") as text_file:
+                    for i in range(len(gate_seq_1)):
+                        print("Random Clifford Seq1 Index: %d, Gate: "%(i) + cliffords.Gate_to_strGate(gate_seq_1[i]) + "\t Random Clifford Seq2 Index: %d, Gate: "%(i) + cliffords.Gate_to_strGate(gate_seq_2[i]), file=text_file)
+
             # test the recovery gate
-            # psi_gnd = np.matrix('1; 0; 0; 0') # ground state |00>
+            psi_gnd = np.matrix('1; 0; 0; 0') # ground state |00>
             # print(gate_seq_1, gate_seq_2)
-            # psi = np.matmul(self.evaluate_sequence(gate_seq_1, gate_seq_2), psi_gnd)
-            # log.info('--- TESTING THE RECOVERY GATE ---')
-            # log.info('The probability amplitude of the final state vector: ' + str(np.matrix(psi).flatten()))
-            # log.info('The population of the ground state after the gate sequence: %.4f'%(np.abs(psi[0,0])**2))
-            # log.info('-------------------------------------------')
+            psi = np.matmul(self.evaluate_sequence(gate_seq_1, gate_seq_2), psi_gnd)
+            log.info('--- TESTING THE RECOVERY GATE ---')
+            log.info('The probability amplitude of the final state vector: ' + str(np.matrix(psi).flatten()))
+            log.info('The population of the ground state after the gate sequence: %.4f'%(np.abs(psi[0,0])**2))
+            log.info('-------------------------------------------')
 
 
             # Assign two qubit gate sequence to where we want
