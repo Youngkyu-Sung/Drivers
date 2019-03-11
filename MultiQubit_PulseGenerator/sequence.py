@@ -7,7 +7,7 @@ import numpy as np
 
 from crosstalk import Crosstalk
 from gates import (CompositeGate, CustomGate, Gate, IdentityGate, ReadoutGate,
-                   SingleQubitRotation, TwoQubitGate, VirtualZGate, RabiGate)
+                   SingleQubitRotation, TwoQubitGate, TwoQubitGate_Coupler, VirtualZGate, RabiGate)
 from predistortion import ExponentialPredistortion, Predistortion
 from pulse import Pulse, PulseShape, PulseType
 from qubits import Qubit, Transmon
@@ -684,6 +684,9 @@ class SequenceToWaveforms:
             pulse = self.pulses_readout[qubit]
         elif isinstance(gate, CustomGate):
             pulse = gate.pulse
+        elif instance(gate, TwoQubitGate_Coupler):
+            raise ValueError('To be implemented')
+            pass
         else:
             raise ValueError('Please provide a pulse for {}'.format(gate))
 

@@ -145,6 +145,16 @@ class TwoQubitGate(BaseGate):
         return super().get_waveform(pulse, t0, t)
 
 
+class TwoQubitGate_Coupler(BaseGate):
+    """Two qubit gate using a coupler."""
+
+    def __init__(self):
+        super().__init__()
+
+    def get_waveform(self, pulse, t0, t):  # noqa: D102
+        return super().get_waveform(pulse, t0, t)
+
+
 class ReadoutGate(BaseGate):
     """Readouts the qubit state."""
 
@@ -311,6 +321,39 @@ class CZ(CompositeGate):
         self.__init__(phi1, phi2)
 
 
+
+class iSWAP_coupler(CompositeGate):
+    """ coupler-mediated iSWAP gate 
+
+    
+    followed by single qubit Z rotations.
+    
+    Parameters
+    ----------
+    phi1 : float
+        Z rotation angle for qubit 1.
+    phi2 : float
+        Z rotation angle for qubit 2.
+
+    """
+
+    def __init__(self, phi1, phi2):
+        super().__init__(n_qubit=2)
+        self.add_gate([IdentityGate(), TwoQubitGate(), TwoQubitGate()])
+        self.add_gate([VirtualZGate(phi1), VirtualZGate(phi2)])
+
+    def new_angles(self, phi1, phi2):
+        """Update the angles of the single qubit rotations.
+
+        Parameters
+        ----------
+        phi1 : float
+            Z rotation angle for qubit 1.
+        phi2 : float
+            Z rotation angle for qubit 2.
+
+        """
+        self.__init__(phi1, phi2)
 class Gate(Enum):
     """Define possible qubit gates."""
 
@@ -342,6 +385,8 @@ class Gate(Enum):
 
     # two-qubit gates
     CPh = TwoQubitGate()
+    iSWAP_Cplr = TwoQubitGate_Coupler()
+    CPh_Cplr = TwoQubitGate_Coupler()
 
     # Readout
     Mxp = MeasurementGate(axis='X', sign='P')

@@ -148,5 +148,25 @@ class SpinLocking(Sequence):
 
         return
 
+class Coupler_iSWAP(Sequence):
+    """ Sequence for coupler-mediated iSWAP gate experiment.
+    """
+    def generate_sequence(self, config):
+        pulse_seq = config['Pulse sequence']
+
+        if (pulse_seq == 'Xp (QB1) - iSWAP'):
+            # apply pi-pulse for QB 1
+            self.add_gate(qubit=[0], gate=Gate.Xp)
+
+            # apply Z-pulse for QB2
+            self.add_gate(qubit=[0], gate=Gate.iSWAP, align='left')
+
+            # apply pi-pulse for QB 1
+            self.add_gate(qubit=[0], gate=Gate.Xp)
+
+    # apply Z-pulse for QB2
+    # self.add_gate(qubit=[1], gate=Gate.I)
+    self.add_gate(qubit=[0], gate=Gate.iSWAP, align='left')
+
 if __name__ == '__main__':
     pass

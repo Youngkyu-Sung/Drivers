@@ -18,6 +18,7 @@ SEQUENCES = {'Rabi': Rabi,
              '1-QB Randomized Benchmarking': SingleQubit_RB,
              '2-QB Randomized Benchmarking': TwoQubit_RB,
              'Spin-locking' : SpinLocking,
+             'Coupler-mediated iSWAP' : Coupler_iSWAP
              'Custom': type(None)}
 
 

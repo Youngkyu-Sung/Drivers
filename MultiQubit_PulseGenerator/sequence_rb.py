@@ -619,6 +619,8 @@ class TwoQubit_RB(Sequence):
                         for g in gate.sequence:
                             cliffordSeq1.append(g[0])
                             cliffordSeq2.append(g[1])
+                    elif interleaved_gate == 'iSWAP':
+                        pass
                     elif interleaved_gate == 'I':
                         # TBA: adjust the duration of I gates?
                         # log.info('Qubits to benchmark: ' + str(qubits_to_benchmark))
