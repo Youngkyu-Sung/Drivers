@@ -277,7 +277,8 @@ class Sequence:
         if not isinstance(gate, list):
             gate = [gate]
         if len(gate) != len(qubit):
-            raise ValueError('Length of qubit and gate list must be equal.')
+            log.info('gate: ' +  str(gate) + ', qubit: ' + str(qubit))
+            raise ValueError('Length of qubit and gate list must be equal.' )
 
         # If any of the gates is a composite gate, special care is needed
         for g in gate:

@@ -142,14 +142,14 @@ class Coupler_iSWAP(Sequence):
             self.add_gate(qubit=[0], gate=Gate.Xp)
 
             # apply Z-pulse for QB2
-            self.add_gate(qubit=[0], gate=Gate.iSWAP, align='left')
+            self.add_gate(qubit=[0], gate=Gate.iSWAP_Cplr, align='left')
 
             # apply pi-pulse for QB 1
             self.add_gate(qubit=[0], gate=Gate.Xp)
 
-    # apply Z-pulse for QB2
-    # self.add_gate(qubit=[1], gate=Gate.I)
-    self.add_gate(qubit=[0], gate=Gate.iSWAP, align='left')
+        # apply Z-pulse for QB2
+        # self.add_gate(qubit=[1], gate=Gate.I)
+        self.add_gate(qubit=[0], gate=Gate.iSWAP_Cplr, align='left')
 
 if __name__ == '__main__':
     pass
