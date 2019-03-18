@@ -681,6 +681,8 @@ class SequenceToWaveforms:
             pulse.phase = gate.phase
         elif isinstance(gate, TwoQubitGate):
             pulse = self.pulses_2qb[qubit]
+        elif isinstance(gate, TwoQubitGate_Coupler):
+            pulse = self.pulses_2qb_Cplr[qubit]
         elif isinstance(gate, ReadoutGate):
             pulse = self.pulses_readout[qubit]
         elif isinstance(gate, CustomGate):
@@ -1076,6 +1078,13 @@ class SequenceToWaveforms:
 
             Gate.CZ.value.new_angles(config.get('QB1 Phi 2QB #12'),
                                      config.get('QB2 Phi 2QB #12'))
+
+
+        # two qubit coupler pulses
+        for n, pulse in enumerate(self.pulses_2qb):
+            pass
+
+
 
         # predistortion
         self.perform_predistortion = config.get('Predistort waveforms', False)

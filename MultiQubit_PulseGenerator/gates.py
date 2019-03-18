@@ -330,30 +330,30 @@ class iSWAP_coupler(CompositeGate):
     
     Parameters
     ----------
-    phi1 : float
-        Z rotation angle for qubit 1.
-    phi2 : float
-        Z rotation angle for qubit 2.
+    phi_L : float
+        Z rotation angle for left qubit.
+    phi_R : float
+        Z rotation angle for right qubit.
 
     """
 
-    def __init__(self, phi1, phi2):
-        super().__init__(n_qubit=2)
+    def __init__(self, phi_L, phi_R):
+        super().__init__(n_qubit=3)
         self.add_gate([IdentityGate(), TwoQubitGate(), TwoQubitGate()])
-        self.add_gate([VirtualZGate(phi1), VirtualZGate(phi2)])
+        self.add_gate([VirtualZGate(phi_L), IdentityGate(), VirtualZGate(phi_R)])
 
-    def new_angles(self, phi1, phi2):
+    def new_angles(self, phi_L, phi_R):
         """Update the angles of the single qubit rotations.
 
         Parameters
         ----------
-        phi1 : float
-            Z rotation angle for qubit 1.
-        phi2 : float
-            Z rotation angle for qubit 2.
+        phi_L : float
+            Z rotation angle for left qubit.
+        phi_R : float
+            Z rotation angle for right qubit.
 
         """
-        self.__init__(phi1, phi2)
+        self.__init__(phi_L, phi_R)
 class Gate(Enum):
     """Define possible qubit gates."""
 
