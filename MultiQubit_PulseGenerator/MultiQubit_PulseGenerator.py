@@ -7,7 +7,7 @@ import copy
 import numpy as np
 
 from BaseDriver import LabberDriver
-from sequence_builtin import CPMG, PulseTrain, Rabi, SpinLocking, Coupler_iSWAP
+from sequence_builtin import CPMG, PulseTrain, Rabi, SpinLocking
 from sequence_rb import SingleQubit_RB, TwoQubit_RB
 from sequence import SequenceToWaveforms
 
@@ -18,7 +18,6 @@ SEQUENCES = {'Rabi': Rabi,
              '1-QB Randomized Benchmarking': SingleQubit_RB,
              '2-QB Randomized Benchmarking': TwoQubit_RB,
              'Spin-locking' : SpinLocking,
-             'Coupler-mediated iSWAP' : Coupler_iSWAP,
              'Custom': type(None)}
 
 
@@ -29,7 +28,7 @@ class Driver(LabberDriver):
         """Perform the operation of opening the instrument connection."""
         # init variables
         self.sequence = None
-        self.sequence_to_waveforms = SequenceToWaveforms()
+        self.sequence_to_waveforms = SequenceToWaveforms(1)
         self.waveforms = {}
         # always create a sequence at startup
         name = self.getValue('Sequence')
@@ -54,10 +53,10 @@ class Driver(LabberDriver):
                     # the custom sequence class has to be named
                     # 'CustomSequence'
                     if not isinstance(self.sequence, mod.CustomSequence):
-                        self.sequence = mod.CustomSequence()
+                        self.sequence = mod.CustomSequence(1)
                 else:
                     # standard built-in sequence
-                    self.sequence = new_type()
+                    self.sequence = new_type(1)
 
         elif (quant.name == 'Custom Python file' and
               self.getValue('Sequence') == 'Custom'):
@@ -69,7 +68,7 @@ class Driver(LabberDriver):
             mod = importlib.import_module(modName)
             # the custom sequence class has to be named 'CustomSequence'
             if not isinstance(self.sequence, mod.CustomSequence):
-                self.sequence = mod.CustomSequence()
+                self.sequence = mod.CustomSequence(1)
         return value
 
     def performGetValue(self, quant, options={}):
