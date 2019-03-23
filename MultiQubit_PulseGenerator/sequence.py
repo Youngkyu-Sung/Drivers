@@ -512,6 +512,7 @@ class SequenceToWaveforms:
         self.pulses_1qb_xy = [Pulse() for n in range(MAX_QUBIT)]
         self.pulses_1qb_z = [Pulse() for n in range(MAX_QUBIT)]
         self.pulses_2qb = [Pulse() for n in range(MAX_QUBIT - 1)]
+        self.pulses_2qb_Cplr = [Pulse() for n in range(MAX_QUBIT - 1)]
         self.pulses_readout = [Pulse(pulse_type=PulseType.READOUT)
                                for n in range(MAX_QUBIT)]
 
@@ -1081,7 +1082,26 @@ class SequenceToWaveforms:
 
 
         # two qubit coupler pulses
-        for n, pulse in enumerate(self.pulses_2qb):
+        for n, pulse in enumerate(self.pulses_2qb_Cplr):
+
+            # global parameters
+            pulse.shape = PulseShape(config.get('Pulse type, 2QB (Coupler)'))
+            pulse.pulse_type = PulseType.Z
+            pulse.truncation_range = config.get('Truncation range, 2QB )')
+            pulse.start_at_zero = config.get('Start at zero, 2QB')
+            # pulse shape
+            if config.get('Uniform 2QB pulses'):
+                pulse.width = config.get('Width, 2QB')
+                pulse.plateau = config.get('Plateau, 2QB')
+            else:
+                pulse.width = config.get('Width, 2QB' + s)
+                pulse.plateau = config.get('Plateau, 2QB' + s)
+            # pulse-specific parameters
+            pulse.amplitude = config.get('Amplitude, 2QB' + s)
+
+            Gate.CZ.value.new_angles(config.get('QB1 Phi 2QB #12'),
+                                     config.get('QB2 Phi 2QB #12'))
+
             pass
 
 
