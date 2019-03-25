@@ -759,6 +759,7 @@ class SequenceToWaveforms:
         for qubit in range(self.n_qubit):
             phase = 0
             for step in self.sequence_list:
+                log.info('sequence list: ' + str(self.sequence_list))
                 for gate in step.gates:
                     gate_obj = None
                     if qubit == gate.qubit: # TODO Allow for 2 qb
@@ -1207,6 +1208,9 @@ class SequenceToWaveforms:
             self.pulses_tqb[n] = pulse
             
             
+        gates.iSWAP_Cplr.new_angles(config.get('QB1 Phi 2QB (Coupler)') / 180 * np.pi,
+                                 config.get('QB2 Phi 2QB (Coupler)') / 180 * np.pi)
+
         # predistortion
         self.perform_predistortion = config.get('Predistort waveforms', False)
         # update all predistorting objects
