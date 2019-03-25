@@ -338,8 +338,6 @@ class Sequence:
                 if not isinstance(qubit, int):
                     raise ValueError("For single gates, give qubit as int (not list).")
             
-            log.info('add_gate in Sequence()')
-            log.info(str(qubit) +', ' + str(gate))
             step.add_gate(qubit, gate)
 
         if index is None:

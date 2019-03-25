@@ -220,40 +220,48 @@ def generate_2QB_Cliffords(_index, **kwargs):
     m2QBClifford = np.identity(4, dtype = complex)
     for i in range(len(seq_QB1)):
         _mGate = np.matrix([1])
-        
-        if (seq_QB1[i] == gates.CZ or seq_QB2[i] == gates.CZ ): # two qubit gates
-            _mGate = np.kron(dict_m2QBGate['CZ'], _mGate)
-
-        elif (generator == 'iSWAP_Cplr' and seq_Cplr[i] == gates.iSWAP_Cplr):
-            _mGate = np.kron(dict_m2QBGate['iSWAP'], _mGate)
-        else: # 1QB gates
-            for g in [seq_QB2[i], seq_QB1[i]]:
-                if (g == gates.I):
-                    _mGate = np.kron(dict_m1QBGate['I'], _mGate)
-                elif (g == gates.Xp):
-                    _mGate = np.kron(dict_m1QBGate['Xp'], _mGate)
-                elif (g == gates.Xm):
-                    _mGate = np.kron(dict_m1QBGate['Xm'], _mGate)
-                elif (g == gates.X2p):
-                    _mGate = np.kron(dict_m1QBGate['X2p'], _mGate)
-                elif (g == gates.X2m):
-                    _mGate = np.kron(dict_m1QBGate['X2m'], _mGate)
-                elif (g == gates.Yp):
-                    _mGate = np.kron(dict_m1QBGate['Yp'], _mGate)
-                elif (g == gates.Ym):
-                    _mGate = np.kron(dict_m1QBGate['Ym'], _mGate)
-                elif (g == gates.Y2p):
-                    _mGate = np.kron(dict_m1QBGate['Y2p'], _mGate)
-                elif (g == gates.Y2m):
-                    _mGate = np.kron(dict_m1QBGate['Y2m'], _mGate)
-                elif (g == gates.Zp):
-                    _mGate = np.kron(dict_m1QBGate['Zp'], _mGate)
-                elif (g == gates.Zm):
-                    _mGate = np.kron(dict_m1QBGate['Zm'], _mGate)
-                elif (g == gates.Z2p):
-                    _mGate = np.kron(dict_m1QBGate['Z2p'], _mGate)
-                elif (g == gates.Z2m):
-                    _mGate = np.kron(dict_m1QBGate['Z2m'], _mGate)
+        # 2QB Gates
+        if (generator == 'CZ'):
+            if (seq_QB1[i] == gates.CZ or seq_QB2[i] == gates.CZ ): # two qubit gates
+                # print('2QB Gate: CZ')
+                _mGate = np.kron(dict_m2QBGate['CZ'], _mGate)
+                m2QBClifford = mul(_mGate, m2QBClifford)
+                continue
+        elif (generator == 'iSWAP_Cplr'):
+            if (seq_Cplr[i] == gates.iSWAP_Cplr):
+                # print('2QB Gate: iSWAP_Cplr')
+                _mGate = np.kron(dict_m2QBGate['iSWAP'], _mGate)
+                m2QBClifford = mul(_mGate, m2QBClifford)
+                continue
+        # 1QB gates
+        # print('1QB Gate:')
+        for g in [seq_QB2[i], seq_QB1[i]]:
+            if (g == gates.I):
+                _mGate = np.kron(dict_m1QBGate['I'], _mGate)
+            elif (g == gates.Xp):
+                _mGate = np.kron(dict_m1QBGate['Xp'], _mGate)
+            elif (g == gates.Xm):
+                _mGate = np.kron(dict_m1QBGate['Xm'], _mGate)
+            elif (g == gates.X2p):
+                _mGate = np.kron(dict_m1QBGate['X2p'], _mGate)
+            elif (g == gates.X2m):
+                _mGate = np.kron(dict_m1QBGate['X2m'], _mGate)
+            elif (g == gates.Yp):
+                _mGate = np.kron(dict_m1QBGate['Yp'], _mGate)
+            elif (g == gates.Ym):
+                _mGate = np.kron(dict_m1QBGate['Ym'], _mGate)
+            elif (g == gates.Y2p):
+                _mGate = np.kron(dict_m1QBGate['Y2p'], _mGate)
+            elif (g == gates.Y2m):
+                _mGate = np.kron(dict_m1QBGate['Y2m'], _mGate)
+            elif (g == gates.Zp):
+                _mGate = np.kron(dict_m1QBGate['Zp'], _mGate)
+            elif (g == gates.Zm):
+                _mGate = np.kron(dict_m1QBGate['Zm'], _mGate)
+            elif (g == gates.Z2p):
+                _mGate = np.kron(dict_m1QBGate['Z2p'], _mGate)
+            elif (g == gates.Z2m):
+                _mGate = np.kron(dict_m1QBGate['Z2m'], _mGate)
         m2QBClifford = mul(_mGate, m2QBClifford)
     return (m2QBClifford)
 
@@ -344,6 +352,7 @@ if __name__ == "__main__":
             list_stabilizer.append(stabilizer)
             list_psi.append(final_psi_00)
             # find the cheapest recovery clifford gate.
+            print('Clifford index: %d'%i)
             print('stabilizer state: '+ str(stabilizer))
             print('Before recovery, final_psi_00: ' + str(final_psi_00.flatten()))
             print('find the cheapest recovery clifford gate')
@@ -377,19 +386,19 @@ if __name__ == "__main__":
                     # count the numbers of the gates
                     for k in range(len(seq_QB1)):
                         if generator == 'CZ':
-                            if (seq_QB1[k] == Gate.CZ or seq_QB2[k] == Gate.CZ):
+                            if (seq_QB1[k] == gates.CZ or seq_QB2[k] == gates.CZ):
                                 N_2QB_gate += 1
                             else:
                                 N_1QB_gate += 2
                         elif generator == 'iSWAP_Cplr':
-                            if (seq_Cplr[k] == Gate.iSWAP_Cplr):
+                            if (seq_Cplr[k] == gates.iSWAP_Cplr):
                                 N_2QB_gate += 1
                             else:
                                 N_1QB_gate += 2
                             
-                        if (seq_QB1[k] == Gate.I):
+                        if (seq_QB1[k] == gates.I):
                             N_I_gate += 1
-                        if (seq_QB2[k] == Gate.I):
+                        if (seq_QB2[k] == gates.I):
                             N_I_gate += 1
 
                     # check whether it is the cheapest
