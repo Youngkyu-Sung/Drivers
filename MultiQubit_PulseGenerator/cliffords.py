@@ -12,18 +12,18 @@ import gates
 
 
 # list of Paulis in string representation
-list_sSign = ['+','-'] #
+list_sSign = ['+','-'] # 
 list_sPauli = ['I','X','Y','Z']
 list_s2QBPauli = list(itertools.product(list_sSign,list_sPauli, list_sPauli))
 
 # list of Paulis, 1QB-gates, and 2QB-gates in np.matrix representation
-dict_mPauli = {'I': np.matrix('1,0;0,1'),
+dict_mPauli = {'I': np.matrix('1,0;0,1'), 
     'X': np.matrix('0,1;1,0'),
     'Y': np.matrix('0,-1j;1j,0'),
     'Z': np.matrix('1,0;0,-1')}
 
 dict_m1QBGate = {'I': np.matrix('1,0;0,1'),
-    'X2p': 1/np.sqrt(2)*np.matrix('1,-1j;-1j,1'),
+    'X2p': 1/np.sqrt(2)*np.matrix('1,-1j;-1j,1'), 
     'X2m': 1/np.sqrt(2)*np.matrix('1,1j;1j,1'),
     'Y2p': 1/np.sqrt(2)*np.matrix('1,-1;1,1'),
     'Y2m': 1/np.sqrt(2)*np.matrix('1,1;-1,1'),
@@ -44,15 +44,15 @@ dict_m2QBGate = {'SWAP': np.matrix('1,0,0,0; 0,0,1,0; 0,1,0,0; 0,0,0,1'),
 
 def expect(_psi, _op):
     """
-    Get the expectation value of the operator, given the quantum state
-
+    Get the expectation value of the operator, given the quantum state 
+    
     Parameters
     ----------
-    _psi: np.matrix
+    _psi: np.matrix 
         the state vector of a quantum state
     _op: np.matrix
-        a quantum operator
-
+        a quantum operator 
+    
     Returns
     -------
     e_val: expectation value
@@ -61,15 +61,15 @@ def expect(_psi, _op):
 
 def sPauli_to_mPauli(_sPaulis):
     """
-    Convert from string-type Paulis to matrix-type Paulis
-
+    Convert from string-type Paulis to matrix-type Paulis 
+    
     Parameters
     ----------
     _sPaulis: string
         string representation of a quantum state
     _op: np.matrix
-        quantum operator
-
+        quantum operator 
+    
     Returns
     -------
     e_val: expectation value
@@ -94,12 +94,11 @@ def sPauli_to_mPauli(_sPaulis):
 
 def Gate_to_strGate(_Gate):
     """
-    represent Gate (defined in "gates.py") object in string-format.
-
+    represent gate (defined in "gates.py") object in string-format.
+    
     Parameters
     ----------
-    Gate: gates.Gate
-        Gate object
+    Gate: gates
 
     Returns
     -------
@@ -134,19 +133,23 @@ def Gate_to_strGate(_Gate):
         str_Gate = 'Z2m'
     elif (_Gate == gates.CZ):
         str_Gate = 'CZ'
+    elif (_Gate == gates.iSWAP_Cplr):
+        str_Gate = 'iSWAP_Cplr'
+    else:
+        raise ValueError('_Gate is not defined: ' + str(_Gate))
 
     return str_Gate
 
 
 def strGate_to_Gate(_strGate):
     """
-    Convert from string-type Gates to Gate (defined in "gates.py") object
-
+    Convert from string-type Gates to Gate (defined in "gates.py") object 
+    
     Parameters
     ----------
     str_Gate: string
         string representation of the Gate
-
+    
     Returns
     -------
     Gate: gates.Gate
@@ -180,20 +183,22 @@ def strGate_to_Gate(_strGate):
         g = gates.Z2m
     elif (_strGate == 'CZ'):
         g = gates.CZ
+    elif (_strGate == 'iSWAP_Cplr'):
+        g = gates.iSWAP_Cplr
 
     return g
 
 def get_stabilizer(_psi):
     """
     Get the stabilizer group corresponding the qubit_state
-
+    
     Parameters
     ----------
     _psi: np.matrix
         The state vector of the qubit.
     Returns
     -------
-    stabilizer: list
+    stabilizer: list 
         The stabilizer group
     """
     stabilizer = []
@@ -206,15 +211,21 @@ def get_stabilizer(_psi):
 
     return stabilizer
 
-def generate_2QB_Cliffords(_index):
+def generate_2QB_Cliffords(_index, **kwargs):
     seq_QB1 = []
     seq_QB2 = []
-    sequence_rb.add_twoQ_clifford(_index, seq_QB1, seq_QB2)
+    seq_Cplr = []
+    generator = kwargs.get('generator', 'CZ')
+    sequence_rb.add_twoQ_clifford(_index, seq_QB1, seq_QB2, gate_seq_Cplr = seq_Cplr, generator = generator)
     m2QBClifford = np.identity(4, dtype = complex)
     for i in range(len(seq_QB1)):
         _mGate = np.matrix([1])
+        
         if (seq_QB1[i] == gates.CZ or seq_QB2[i] == gates.CZ ): # two qubit gates
             _mGate = np.kron(dict_m2QBGate['CZ'], _mGate)
+
+        elif (generator == 'iSWAP_Cplr' and seq_Cplr[i] == gates.iSWAP_Cplr):
+            _mGate = np.kron(dict_m2QBGate['iSWAP'], _mGate)
         else: # 1QB gates
             for g in [seq_QB2[i], seq_QB1[i]]:
                 if (g == gates.I):
@@ -250,10 +261,10 @@ def saveData(file_path, data):
 
     """
     Create a log file. (Use the built-in pickle module)
-
+    
     Parameters
     ----------
-    file_path: str
+    file_path: str 
         path of the log file
 
     - data: arbitrary object
@@ -272,10 +283,10 @@ def loadData(file_path):
 
     """
     Load a log file. (Use the built-in pickle module)
-
+    
     Parameters
     ----------
-    file_path: str
+    file_path: str 
         path of the log file
 
 
@@ -296,38 +307,43 @@ if __name__ == "__main__":
     # ----- THIS IS FOR GENERATING RECOVERY CLIFFORD LOOK-UP TABLE ------
     # -------------------------------------------------------------------
 
+    # Native 2QB Gate ('CZ' or 'iSWAP_Cplr')
+    generator = 'iSWAP_Cplr'
+
     # Start with ground state
     psi_00 = np.matrix('1;0;0;0')
     psi_01 = np.matrix('0;1;0;0')
     psi_10 = np.matrix('0;0;1;0')
     psi_11 = np.matrix('0;0;0;1')
-
+    
     N_2QBcliffords = 11520
     list_stabilizer = []
     list_psi = []
     list_recovery_gates_QB1 = []
     list_recovery_gates_QB2 = []
+    list_recovery_gates_Cplr = []
+
     cnt = 0
 
     # Apply 11520 different 2QB cliffords and get the corresponding stabilizer states
     for i in range(N_2QBcliffords):
-        if (i/N_2QBcliffords > cnt):
+        if (i/N_2QBcliffords > cnt):    
             print('Running... %d %%'%(cnt*100))
             cnt = cnt+0.01
-        g = generate_2QB_Cliffords(i)
+        g = generate_2QB_Cliffords(i, generator = generator)
 
         final_psi_00 = dot(g, psi_00)
         final_psi_01 = dot(g, psi_01)
         final_psi_10 = dot(g, psi_10)
         final_psi_11 = dot(g, psi_11)
 
-        stabilizer = get_stabilizer(final_psi_00)
+        stabilizer = get_stabilizer(final_psi_00)  
 
-        # append only if the state is not in list_stablizier list.
+        # append only if the state is not in list_stablizier list. 
         if (not (stabilizer in list_stabilizer)):
             list_stabilizer.append(stabilizer)
             list_psi.append(final_psi_00)
-            # find the cheapest recovery clifford gates.
+            # find the cheapest recovery clifford gate.
             print('stabilizer state: '+ str(stabilizer))
             print('Before recovery, final_psi_00: ' + str(final_psi_00.flatten()))
             print('find the cheapest recovery clifford gate')
@@ -337,12 +353,11 @@ if __name__ == "__main__":
             cheapest_index = None
 
             for j in range(N_2QBcliffords):
-                recovery_gate = generate_2QB_Cliffords(j)
+                recovery_gate = generate_2QB_Cliffords(j, generator = generator)
                 seq_QB1 = []
                 seq_QB2 = []
-                # sequence_rb.add_twoQ_clifford(j, seq_QB1, seq_QB2)
-                # print(dot(recovery_gate, final_psi_00))
-                # exit()
+                seq_Cplr = []
+
                 if ((np.abs(1-np.abs(dot(recovery_gate, final_psi_00)[0,0])) < 1e-6) and
                     (np.abs(1-np.abs(dot(recovery_gate, final_psi_01)[1,0])) < 1e-6) and
                     (np.abs(1-np.abs(dot(recovery_gate, final_psi_10)[2,0])) < 1e-6) and
@@ -352,40 +367,47 @@ if __name__ == "__main__":
                     (np.abs(1-dot(recovery_gate, final_psi_11)[3,0]/dot(recovery_gate, final_psi_00)[0,0]) < 1e-6)
                     ):
 
-                    print(dot(recovery_gate, final_psi_00)[0,0],dot(recovery_gate, final_psi_01)[1,0],dot(recovery_gate, final_psi_10)[2,0],dot(recovery_gate, final_psi_11)[3,0])
+                    # print(dot(recovery_gate, final_psi_00)[0,0],dot(recovery_gate, final_psi_01)[1,0],dot(recovery_gate, final_psi_10)[2,0],dot(recovery_gate, final_psi_11)[3,0])
                     # if the gate is recovery, check if it is the cheapest.
 
-                    # Less 2QB Gates, Less 1QB Gates, and More I Gates = the cheapest gates.
+                    # Less 2QB Gates, Less 1QB Gates, and More I Gates = the cheapest gate.
                     # The priority: less 2QB gates > less 1QB gates > more I gates
                     N_2QB_gate, N_1QB_gate, N_I_gate = 0, 0, 0
 
                     # count the numbers of the gates
                     for k in range(len(seq_QB1)):
-                        if (seq_QB1[k] == gates.CZ or seq_QB2[k] == gates.CZ):
-                            N_2QB_gate += 1
-                        else:
-                            N_1QB_gate += 2
-                        if (seq_QB1[k] == gates.I):
+                        if generator == 'CZ':
+                            if (seq_QB1[k] == Gate.CZ or seq_QB2[k] == Gate.CZ):
+                                N_2QB_gate += 1
+                            else:
+                                N_1QB_gate += 2
+                        elif generator == 'iSWAP_Cplr':
+                            if (seq_Cplr[k] == Gate.iSWAP_Cplr):
+                                N_2QB_gate += 1
+                            else:
+                                N_1QB_gate += 2
+                            
+                        if (seq_QB1[k] == Gate.I):
                             N_I_gate += 1
-                        if (seq_QB2[k] == gates.I):
+                        if (seq_QB2[k] == Gate.I):
                             N_I_gate += 1
 
                     # check whether it is the cheapest
                     # if it has less 2QB gates, always update it.
-                    if (N_2QB_gate < min_N_2QB_gate):
+                    if (N_2QB_gate < min_N_2QB_gate): 
                         min_N_2QB_gate, min_N_1QB_gate, max_N_I_gate, cheapest_index = (N_2QB_gate, N_1QB_gate, N_I_gate, j)
                         print('the cheapest sequence update! [N_2QB_gate, N_1QB_gate, N_I_gate, seq. index] ' + str([min_N_2QB_gate, min_N_1QB_gate, max_N_I_gate, cheapest_index]))
                     else:
                         # if it has equal # of 2QB gates and less 1QB gates, update it.
-                        if (N_2QB_gate == min_N_2QB_gate and
+                        if (N_2QB_gate == min_N_2QB_gate and 
                             N_1QB_gate < min_N_1QB_gate):
                             min_N_2QB_gate, min_N_1QB_gate, max_N_I_gate, cheapest_index = (N_2QB_gate, N_1QB_gate, N_I_gate, j)
                             print('the cheapest sequence update! [N_2QB_gate, N_1QB_gate, N_I_gate, seq. index] ' + str([min_N_2QB_gate, min_N_1QB_gate, max_N_I_gate, cheapest_index]))
                         else:
                             # if it has equal # of 2QB & 1QB gates, and more 1QB gates, update it.
-                            if (N_2QB_gate == min_N_2QB_gate and
-                                N_1QB_gate == min_N_1QB_gate and
-                                N_I_gate >= max_N_I_gate):
+                            if (N_2QB_gate == min_N_2QB_gate and 
+                                N_1QB_gate == min_N_1QB_gate and 
+                                N_I_gate >= max_N_I_gate): 
                                 min_N_2QB_gate, min_N_1QB_gate, max_N_I_gate, cheapest_index = (N_2QB_gate, N_1QB_gate, N_I_gate, j)
                                 print('the cheapest sequence update! [N_2QB_gate, N_1QB_gate, N_I_gate, seq. index] ' + str([min_N_2QB_gate, min_N_1QB_gate, max_N_I_gate, cheapest_index]))
 
@@ -393,24 +415,34 @@ if __name__ == "__main__":
 
             seq_recovery_QB1 = []
             seq_recovery_QB2 = []
-            sequence_rb.add_twoQ_clifford(cheapest_index, seq_recovery_QB1, seq_recovery_QB2)
+            seq_recovery_Cplr = []
+            sequence_rb.add_twoQ_clifford(cheapest_index, seq_recovery_QB1, seq_recovery_QB2, gate_seq_Cplr = seq_recovery_Cplr, generator = generator)
 
             # remove redundant Identity gates
             index_identity = [] # find where Identity gates are
             for p in range(len(seq_recovery_QB1)):
-                if (seq_recovery_QB1[p] == gates.I and seq_recovery_QB2[p] == gates.I):
-                    index_identity.append(p)
+                if generator == 'CZ':
+                    if (seq_recovery_QB1[p] == gates.I and seq_recovery_QB2[p] == gates.I):
+                        index_identity.append(p)
+                elif generator == 'iSWAP_Cplr':
+                    if (seq_recovery_QB1[p] == gates.I and seq_recovery_QB2[p] == gates.I and seq_recovery_Cplr[p] == gates.I):
+                        index_identity.append(p)
             seq_recovery_QB1 = [m for n, m in enumerate(seq_recovery_QB1) if n not in index_identity]
             seq_recovery_QB2 = [m for n, m in enumerate(seq_recovery_QB2) if n not in index_identity]
+            if generator == 'iSWAP_Cplr':
+                seq_recovery_Cplr = [m for n, m in enumerate(seq_recovery_Cplr) if n not in index_identity]
 
             # convert the sequences into the text-format (Avoid using customized python class objects)
-            for _seq in [seq_recovery_QB1, seq_recovery_QB2]:
+            for _seq in [seq_recovery_QB1, seq_recovery_QB2, seq_recovery_Cplr]:
                 for q in range(len(_seq)):
                     _seq[q] = Gate_to_strGate(_seq[q])
             list_recovery_gates_QB1.append(seq_recovery_QB1)
             list_recovery_gates_QB2.append(seq_recovery_QB2)
+            list_recovery_gates_Cplr.append(seq_recovery_Cplr)
             print('The cheapest recovery clifford gate (QB1): ' + str(seq_recovery_QB1))
             print('The cheapest recovery clifford gate (QB2): ' + str(seq_recovery_QB2))
+            if (generator == 'iSWAP_Cplr'):
+                print('The cheapest recovery clifford gate (Coupler): ' + str(seq_recovery_Cplr))
             print('\n')
 
     # save the results.
@@ -419,8 +451,11 @@ if __name__ == "__main__":
     dict_result['psi'] = list_psi
     dict_result['recovery_gates_QB1'] = list_recovery_gates_QB1
     dict_result['recovery_gates_QB2'] = list_recovery_gates_QB2
-    saveData('recovery_rb_table.pickle', dict_result)
-
+    if generator == 'CZ':
+        saveData('recovery_rb_table_CZ.pickle', dict_result)
+    elif generator == 'iSWAP_Cplr':
+        dict_result['recovery_gates_Cplr'] = list_recovery_gates_Cplr
+        saveData('recovery_rb_table_iSWAP_Cplr.pickle', dict_result)
     # load the results.
     # dict_result =loadData('recovery_rb_table.dill')
     # print(dict_result['psi_stabilizer'])

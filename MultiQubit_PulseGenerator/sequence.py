@@ -106,7 +106,6 @@ class Step:
                 if self._qubit_in_step(n):
                     raise ValueError("Qubit {} already in step.".format(n))
 
-
         self.gates.append(GateOnQubit(gate, qubit))
 
 
@@ -338,6 +337,9 @@ class Sequence:
             else:
                 if not isinstance(qubit, int):
                     raise ValueError("For single gates, give qubit as int (not list).")
+            
+            log.info('add_gate in Sequence()')
+            log.info(str(qubit) +', ' + str(gate))
             step.add_gate(qubit, gate)
 
         if index is None:
@@ -508,6 +510,8 @@ class SequenceToWaveforms:
         self.pulses_1qb_xy = [None for n in range(self.n_qubit)]
         self.pulses_1qb_z = [None for n in range(self.n_qubit)]
         self.pulses_2qb = [None for n in range(self.n_qubit - 1)]
+        self.pulses_cplr = [None for n in range(self.n_qubit)]
+        self.pulses_tqb = [None for n in range(self.n_qubit)]
         self.pulses_readout = [None for n in range(self.n_qubit)]
 
         # cross-talk
@@ -671,6 +675,10 @@ class SequenceToWaveforms:
             pulse = gate.get_adjusted_pulse(self.pulses_1qb_xy[qubit])
         elif isinstance(gate, gates.TwoQubitGate):
             pulse = gate.get_adjusted_pulse(self.pulses_2qb[qubit[0]])
+        elif isinstance(gate, gates.CplrGate):
+            pulse = gate.get_adjusted_pulse(self.pulses_cplr[qubit])
+        elif isinstance(gate, gates.TQBGate):
+            pulse = gate.get_adjusted_pulse(self.pulses_tqb[qubit])
         elif isinstance(gate, gates.ReadoutGate):
             pulse = gate.get_adjusted_pulse(self.pulses_readout[qubit])
         elif isinstance(gate, gates.CustomGate):
@@ -917,7 +925,13 @@ class SequenceToWaveforms:
                 elif isinstance(gate_obj, gates.TwoQubitGate):
                     waveform = self._wave_z[qubit]
                     delay = self.wave_z_delays[qubit]
-                elif isinstance(gate_obj, gates.SingleQubitXYRotation):
+                elif isinstance(gate_obj, gates.CplrGate):
+                    waveform = self._wave_z[qubit]
+                    delay = self.wave_z_delays[qubit]
+                elif isinstance(gate_obj, gates.TQBGate):
+                    waveform = self._wave_z[qubit]
+                    delay = self.wave_z_delays[qubit]
+                elif isinstance(gate_obj, (gates.SingleQubitXYRotation,gates.RabiGate)):
                     waveform = self._wave_xy[qubit]
                     delay = self.wave_xy_delays[qubit]
                 elif isinstance(gate_obj, gates.ReadoutGate):
@@ -1118,6 +1132,35 @@ class SequenceToWaveforms:
 
             self.pulses_2qb[n] = pulse
 
+        # iSWAP coupler gate: coupler pulses
+        for n, pulse in enumerate(self.pulses_cplr):
+            # global parameters
+            pulse = (getattr(pulses, config.get('Pulse type, 2QB (Coupler)'))
+                     (complex=False))
+
+            pulse.truncation_range = config.get('Truncation range, 2QB (Coupler)')
+            pulse.start_at_zero = config.get('Start at zero, 2QB (Coupler)')    
+            pulse.width = config.get('Width, 2QB (Coupler)')
+            pulse.plateau = config.get('Plateau, 2QB (Coupler)')
+            pulse.amplitude = config.get('Amplitude, 2QB (Coupler)')
+
+            self.pulses_cplr[n] = pulse
+
+        # iSWAP coupler gate: tunable qubit pulses
+        for n, pulse in enumerate(self.pulses_tqb):
+            # global parameters
+            pulse = (getattr(pulses, config.get('Pulse type, 2QB (Tunable QB)'))
+                     (complex=False))
+
+            pulse.truncation_range = config.get('Truncation range, 2QB (Tunable QB)')
+            pulse.start_at_zero = config.get('Start at zero, 2QB (Tunable QB)')
+            pulse.width = config.get('Width, 2QB (Tunable QB)')
+            pulse.plateau = config.get('Plateau, 2QB (Tunable QB)')
+            pulse.amplitude = config.get('Amplitude, 2QB (Tunable QB)')
+
+            self.pulses_tqb[n] = pulse
+            
+            
         # predistortion
         self.perform_predistortion = config.get('Predistort waveforms', False)
         # update all predistorting objects

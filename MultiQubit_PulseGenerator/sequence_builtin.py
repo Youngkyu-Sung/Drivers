@@ -36,7 +36,7 @@ class CPMG(Sequence):
         # always do T1 same way, regardless if edge-to-edge or center-center
         if n_pulse < 0:
             self.add_gate_to_all(gate_pi)
-            self.add_gate_to_all(IdentityGate(width=duration))
+            self.add_gate_to_all(gates.IdentityGate(width=duration), dt=0)
 
         elif edge_to_edge:
             # edge-to-edge pulsing, set pulse separations
@@ -137,6 +137,16 @@ class SpinLocking(Sequence):
             self.add_gate_to_all(gates.Y2p)
 
         return
+
+class iSWAP_Cplr(Sequence):
+    """ Sequence for iSWAP using tunable couplergate.
+    """
+
+    def generate_sequence(self, config):
+        """Generate sequence by adding gates/pulses to waveforms."""
+        # just add pi-pulses for the number of available qubits
+
+        self.add_gate(qubit=[1, 0, 2], gate=gates.iSWAP_Cplr)
 
 if __name__ == '__main__':
     pass

@@ -21,11 +21,9 @@ class OneQubitGate():
     def number_of_qubits(self):
         return 1
 
-
 class TwoQubitGate():
     def number_of_qubits(self):
         return 2
-
 
 class SingleQubitXYRotation(BaseGate, OneQubitGate):
     """Single qubit rotations around the XY axes.
@@ -101,8 +99,8 @@ class IdentityGate(BaseGate, OneQubitGate):
         pulse.amplitude = 0
         pulse.use_drag = False # Avoids bug
         if self.width is not None:
-            pulse.width = self.width
-            pulse.plateau = 0
+            pulse.width = 0
+            pulse.plateau = self.width
         return pulse
 
 
@@ -123,6 +121,13 @@ class CPHASE(BaseGate, TwoQubitGate):
         pulse.negative_amplitude = self.negative_amplitude
         return pulse
 
+class CplrGate(BaseGate, OneQubitGate):
+    def __init__(self):
+        pass
+
+class TQBGate(BaseGate, OneQubitGate):
+    def __init__(self):
+        pass
 
 class ReadoutGate(BaseGate, OneQubitGate):
     """Readouts the qubit state."""
@@ -326,8 +331,11 @@ CNOT.add_gate(H, 1)
 CNOT.add_gate(CZ, [0, 1])
 CNOT.add_gate(H, 1)
 
-
-
+# two-qubit coupler gate
+Cplr = CplrGate()
+TQB = TQBGate()
+iSWAP_Cplr = CompositeGate(n_qubit=3)
+iSWAP_Cplr.add_gate([I, Cplr, TQB])
 
 if __name__ == '__main__':
     pass
