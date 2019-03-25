@@ -579,8 +579,8 @@ class SequenceToWaveforms:
             for n in range(1, self.n_qubit):
                 self._wave_xy[n][:] = 0.0
 
-        if self.compensate_crosstalk:
-            self._perform_crosstalk_compensation()
+        # if self.compensate_crosstalk:
+        #     self._perform_crosstalk_compensation()
         if self.perform_predistortion:
             self._predistort_xy_waveforms()
         if self.perform_predistortion_z:
@@ -920,15 +920,23 @@ class SequenceToWaveforms:
                 elif isinstance(gate_obj, gates.SingleQubitZRotation):
                     waveform = self._wave_z[qubit]
                     delay = self.wave_z_delays[qubit]
+                    if self.compensate_crosstalk:
+                        crosstalk = self._crosstalk.compensation_matrix[:,qubit]
                 elif isinstance(gate_obj, gates.TwoQubitGate):
                     waveform = self._wave_z[qubit]
                     delay = self.wave_z_delays[qubit]
+                    if self.compensate_crosstalk:
+                        crosstalk = self._crosstalk.compensation_matrix[:,qubit]
                 elif isinstance(gate_obj, gates.CplrGate):
                     waveform = self._wave_z[qubit]
                     delay = self.wave_z_delays[qubit]
+                    if self.compensate_crosstalk:
+                        crosstalk = self._crosstalk.compensation_matrix[:,qubit]
                 elif isinstance(gate_obj, gates.TQBGate):
                     waveform = self._wave_z[qubit]
                     delay = self.wave_z_delays[qubit]
+                    if self.compensate_crosstalk:
+                        crosstalk = self._crosstalk.compensation_matrix[:,qubit]
                 elif isinstance(gate_obj, (gates.SingleQubitXYRotation,gates.RabiGate)):
                     waveform = self._wave_xy[qubit]
                     delay = self.wave_xy_delays[qubit]
@@ -948,15 +956,55 @@ class SequenceToWaveforms:
                     start = self._round(step.t_start + delay)
                     end = self._round(step.t_end + delay)
 
-                indices = np.arange(
-                    max(np.floor(start * self.sample_rate), 0),
-                    min(np.ceil(end * self.sample_rate), len(waveform)),
-                    dtype=int
-                )
+                # by Andreas (2019/03/25): Correct flux crosstalk delay error
+                if (self.compensate_crosstalk and
+                    isinstance(gate_obj,
+                               (gates.SingleQubitZRotation,
+                                gates.TwoQubitGate, 
+                                gates.CplrGate,
+                                gates.TQBGate))):
+                    for q in range(self.n_qubit):
+                        waveform = self._wave_z[q]
+                        delay = self.wave_z_delays[q]
+                        start = self._round(step.t_start + delay)
+                        end = self._round(step.t_end + delay)
+                        indices = np.arange(
+                            max(np.floor(start * self.sample_rate), 0),
+                            min(
+                                np.ceil(end * self.sample_rate),
+                                len(waveform)),
+                            dtype=int)
 
-                # return directly if no indices
-                if len(indices) == 0:
-                    continue
+                        # return directly if no indices
+                        if len(indices) == 0:
+                            continue
+
+                        # calculate time values for the pulse indices
+                        t = indices / self.sample_rate
+                        max_duration = end - start
+                        middle = end - max_duration / 2
+                        if step.align == 'center':
+                            t0 = middle
+                        elif step.align == 'left':
+                            t0 = middle - (max_duration - gate.duration) / 2
+                        elif step.align == 'right':
+                            t0 = middle + (max_duration - gate.duration) / 2
+
+                        scaling_factor = float(crosstalk[q, 0])
+                        if q != qubit:
+                            scaling_factor = -scaling_factor
+                        waveform[indices] += (scaling_factor
+                            * gate.pulse.calculate_waveform(t0, t))
+                else:
+                    # calculate the pulse waveform for the selected indices
+                    indices = np.arange(
+                        max(np.floor(start * self.sample_rate), 0),
+                        min(np.ceil(end * self.sample_rate), len(waveform)),
+                        dtype=int)
+
+                    # return directly if no indices
+                    if len(indices) == 0:
+                        continue
 
                 # calculate time values for the pulse indices
                 t = indices / self.sample_rate

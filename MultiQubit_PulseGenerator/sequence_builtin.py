@@ -146,7 +146,7 @@ class iSWAP_Cplr(Sequence):
         """Generate sequence by adding gates/pulses to waveforms."""
         # just add pi-pulses for the number of available qubits
 
-        self.add_gate(qubit=[1, 0, 2], gate=gates.iSWAP_Cplr)
+        self.add_gate(qubit=[0, 1, 2], gate=gates.iSWAP_Cplr)
 
 if __name__ == '__main__':
     pass

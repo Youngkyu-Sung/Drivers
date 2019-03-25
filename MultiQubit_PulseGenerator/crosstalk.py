@@ -3,6 +3,8 @@
 import numpy as np
 from scipy.linalg import inv
 
+import logging
+log = logging.getLogger('LabberDriver')
 
 class Crosstalk(object):
     """This class is used to compensate crosstalk qubit Z control."""
@@ -89,6 +91,9 @@ class Crosstalk(object):
 
         """
         mat_voltage_vs_phi0 = inv(self.phi0_vs_voltage)
+        log.info('crosstalk matrix: ' + str(self.phi0_vs_voltage))
+        log.info('inverse-crosstalk matrix: ' + str(mat_voltage_vs_phi0))
+
 
         wavform_length = len(waveforms[0])
         wavform_num = len(self.Sequence)
