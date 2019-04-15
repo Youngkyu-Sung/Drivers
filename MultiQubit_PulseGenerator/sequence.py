@@ -759,7 +759,7 @@ class SequenceToWaveforms:
         for qubit in range(self.n_qubit):
             phase = 0
             for step in self.sequence_list:
-                log.info('sequence list: ' + str(self.sequence_list))
+                # log.info('sequence list: ' + str(self.sequence_list))
                 for gate in step.gates:
                     gate_obj = None
                     if qubit == gate.qubit: # TODO Allow for 2 qb
