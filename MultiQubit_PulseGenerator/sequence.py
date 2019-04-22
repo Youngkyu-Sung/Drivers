@@ -1007,18 +1007,18 @@ class SequenceToWaveforms:
                     if len(indices) == 0:
                         continue
 
-                # calculate time values for the pulse indices
-                t = indices / self.sample_rate
-                max_duration = end - start
-                middle = end - max_duration/2
-                if step.align == 'center':
-                    t0 = middle
-                elif step.align == 'left':
-                    t0 = middle - (max_duration - gate.duration) / 2
-                elif step.align == 'right':
-                    t0 = middle + (max_duration - gate.duration) / 2
-                # calculate the pulse waveform for the selected indices
-                waveform[indices] += gate.pulse.calculate_waveform(t0, t)
+                    # calculate time values for the pulse indices
+                    t = indices / self.sample_rate
+                    max_duration = end - start
+                    middle = end - max_duration/2
+                    if step.align == 'center':
+                        t0 = middle
+                    elif step.align == 'left':
+                        t0 = middle - (max_duration - gate.duration) / 2
+                    elif step.align == 'right':
+                        t0 = middle + (max_duration - gate.duration) / 2
+                    # calculate the pulse waveform for the selected indices
+                    waveform[indices] += gate.pulse.calculate_waveform(t0, t)
 
     def set_parameters(self, config={}):
         """Set base parameters using config from from Labber driver.
@@ -1186,10 +1186,20 @@ class SequenceToWaveforms:
                      (complex=False))
 
             pulse.truncation_range = config.get('Truncation range, 2QB (Coupler)')
-            pulse.start_at_zero = config.get('Start at zero, 2QB (Coupler)')    
-            pulse.width = config.get('Width, 2QB (Coupler)')
-            pulse.plateau = config.get('Plateau, 2QB (Coupler)')
-            pulse.amplitude = config.get('Amplitude, 2QB (Coupler)')
+            pulse.start_at_zero = config.get('Start at zero, 2QB (Coupler)')  
+              
+            pulse.width = config.get('Width 1, 2QB (Coupler)')
+            pulse.plateau = config.get('Plateau 1, 2QB (Coupler)')
+            pulse.amplitude = config.get('Amplitude 1, 2QB (Coupler)')
+
+            pulse.width1 = config.get('Width 1, 2QB (Coupler)')
+            pulse.plateau1 = config.get('Plateau 1, 2QB (Coupler)')
+            pulse.amplitude1 = config.get('Amplitude 1, 2QB (Coupler)')
+
+            pulse.width2 = config.get('Width 2, 2QB (Coupler)')
+            pulse.plateau2 = config.get('Plateau 2, 2QB (Coupler)')
+            pulse.amplitude2 = config.get('Amplitude 2, 2QB (Coupler)')
+
 
             self.pulses_cplr[n] = pulse
 

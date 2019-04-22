@@ -51,6 +51,13 @@ class Pulse:
         self.start_at_zero = False
         self.complex = complex
 
+        self.width1 = 10E-9
+        self.width2 = 10E-9
+        self.plateau1 = 0.0
+        self.plateau2 = 0.0
+        self.amplitude1 = 0.5
+        self.amplitude2 = 0.5
+
     def total_duration(self):
         """Get the total duration for the pulse.
 
@@ -206,6 +213,62 @@ class Square(Pulse):
 
         return values
 
+class DoubleCosine(Pulse):
+    def total_duration(self):
+        return np.amax([self.width1 + self.plateau1, self.width2 + self.plateau2], axis = 0)
+
+    def calculate_envelope(self, t0, t):
+        values = np.zeros_like(t)
+
+        # first cosine pulse
+        tau1 = self.width1
+        if self.plateau1 == 0:
+            ind_1 = np.where((t < t0 + tau1 / 2) & (t >= t0 - tau1 / 2))
+            values[ind_1] += (self.amplitude1/ 2 *
+                      (1 - np.cos(2 * np.pi * (t[ind_1] - t0 + tau1 / 2) / tau1)))
+
+        else:
+            ind_1 = np.where((t >= t0 - self.plateau1 / 2 - tau1 / 2) & (t < t0 - self.plateau1 / 2))
+            values[ind_1] += self.amplitude1 / 2 * \
+                (1 - np.cos(2 * np.pi *
+                            (t[ind_1] - t0 +
+                             self.plateau1 / 2 + tau1 / 2) / tau1))
+
+            ind_2 = np.where((t >= t0 - self.plateau1 / 2) & (t < t0 + self.plateau1 / 2 ))
+            values[ind_2] += self.amplitude1 * \
+                np.ones_like(t[ind_2])
+
+            ind_3 = np.where((t >= t0 + self.plateau1 / 2) & (t < t0 + self.plateau1 / 2 + tau1 / 2))
+            values[ind_3] += self.amplitude1 / 2 * \
+                (1 - np.cos(2 * np.pi *
+                            (t[ind_3] - t0 -
+                             self.plateau1 / 2 + tau1 / 2) / tau1))
+
+        # second cosine pluse
+        tau2 = self.width2
+        if self.plateau2 == 0:
+            ind_1 = np.where((t < t0 + tau2 / 2) & (t >= t0 - tau2 / 2))
+            values[ind_1] += (self.amplitude2/ 2 *
+                      (1 - np.cos(2 * np.pi * (t[ind_1] - t0 + tau2 / 2) / tau2)))
+
+        else:
+            ind_1 = np.where((t >= t0 - self.plateau2 / 2 - tau2 / 2) & (t < t0 - self.plateau2 / 2))
+            values[ind_1] += self.amplitude2 / 2 * \
+                (1 - np.cos(2 * np.pi *
+                            (t[ind_1] - t0 +
+                             self.plateau2 / 2 + tau2 / 2) / tau2))
+
+            ind_2 = np.where((t >= t0 - self.plateau2 / 2) & (t < t0 + self.plateau2 / 2))
+            values[ind_2] += self.amplitude2 * \
+                np.ones_like(t[ind_2])
+
+            ind_3 = np.where((t >= t0 + self.plateau2 / 2) & (t < t0 + self.plateau2 / 2 + tau2 / 2))
+            values[ind_3] += self.amplitude2 / 2 * \
+                (1 - np.cos(2 * np.pi *
+                            (t[ind_3] - t0 -
+                             self.plateau2 / 2 + tau2 / 2) / tau2))
+
+        return values
 
 class Cosine(Pulse):
     def total_duration(self):

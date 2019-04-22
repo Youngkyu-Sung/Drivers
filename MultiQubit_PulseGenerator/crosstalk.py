@@ -12,6 +12,7 @@ class Crosstalk(object):
     def __init__(self):
         # define variables
         self.matrix_path = ''
+        log.info('hi yuoungkyu')
         # TODO(dan): define variables for matrix, etc
 
     def set_parameters(self, config={}):
@@ -90,6 +91,7 @@ class Crosstalk(object):
             Waveforms with crosstalk compensation
 
         """
+        log.info('compensate!')
         mat_voltage_vs_phi0 = inv(self.phi0_vs_voltage)
         log.info('crosstalk matrix: ' + str(self.phi0_vs_voltage))
         log.info('inverse-crosstalk matrix: ' + str(mat_voltage_vs_phi0))
