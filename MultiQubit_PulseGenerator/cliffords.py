@@ -340,9 +340,6 @@ if __name__ == "__main__":
                 recovery_gate = generate_2QB_Cliffords(j)
                 seq_QB1 = []
                 seq_QB2 = []
-                # sequence_rb.add_twoQ_clifford(j, seq_QB1, seq_QB2)
-                # print(dot(recovery_gate, final_psi_00))
-                # exit()
                 if ((np.abs(1-np.abs(dot(recovery_gate, final_psi_00)[0,0])) < 1e-6) and
                     (np.abs(1-np.abs(dot(recovery_gate, final_psi_01)[1,0])) < 1e-6) and
                     (np.abs(1-np.abs(dot(recovery_gate, final_psi_10)[2,0])) < 1e-6) and
