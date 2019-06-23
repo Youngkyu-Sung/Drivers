@@ -458,8 +458,12 @@ class SingleQubit_RB(Sequence):
                         print("Recovery Gate: [" + cliffords.Gate_to_strGate(recovery_gate) +"]", file=text_file)
                 single_gate_seq.append(recovery_gate)
                 multi_gate_seq.append(single_gate_seq)
-            # transpose list of lists
-            multi_gate_seq = list(map(list, itertools.zip_longest(*multi_gate_seq, fillvalue=gates.I))) # Not to chop
+            # transpose list of lists            
+            # - (06/23/2019 Update) Fill identity gates to the shorter sequence at the end -> at the beginning
+            multi_gate_seq_reversed = [i[::-1] for i in multi_gate_seq]
+            multi_gate_seq_reversed_tr = list(map(list, itertools.zip_longest(*multi_gate_seq_reversed, fillvalue=gates.I))) # Not to chop
+            multi_gate_seq = multi_gate_seq_reversed_tr[::-1]
+            
             self.add_gates(multi_gate_seq)
             self.prev_gate_seq = multi_gate_seq
         else:
