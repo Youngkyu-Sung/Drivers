@@ -529,6 +529,8 @@ class SequenceToWaveforms:
         self.pulses_1qb_z = [None for n in range(self.n_qubit)]
         self.pulses_2qb = [None for n in range(self.n_qubit - 1)]
         self.pulses_readout = [None for n in range(self.n_qubit)]
+        self.pulses_cplr = [None for n in range(self.n_qubit)]
+        self.pulses_tqb = [None for n in range(self.n_qubit)]
 
         # cross-talk
         self.compensate_crosstalk = False
@@ -716,6 +718,10 @@ class SequenceToWaveforms:
             pulse = gate.get_adjusted_pulse(self.pulses_1qb_xy[qubit])
         elif isinstance(gate, gates.TwoQubitGate):
             pulse = gate.get_adjusted_pulse(self.pulses_2qb[qubit[0]])
+        elif isinstance(gate, gates.CplrGate):
+            pulse = gate.get_adjusted_pulse(self.pulses_cplr[qubit])
+        elif isinstance(gate, gates.TQBGate):
+            pulse = gate.get_adjusted_pulse(self.pulses_tqb[qubit])
         elif isinstance(gate, gates.ReadoutGate):
             pulse = gate.get_adjusted_pulse(self.pulses_readout[qubit])
         elif isinstance(gate, gates.CustomGate):
@@ -1058,6 +1064,11 @@ class SequenceToWaveforms:
                     if self.compensate_crosstalk:
                         crosstalk = self._crosstalk.compensation_matrix[:,
                                                                         qubit]
+                elif isinstance(gate_obj, gates.CplrGate):
+                    waveform = self._wave_z[qubit]
+                    delay = self.wave_z_delays[qubit]
+                    if self.compensate_crosstalk:
+                        crosstalk = self._crosstalk.compensation_matrix[:,qubit]
                 elif isinstance(gate_obj, gates.SingleQubitXYRotation):
                     waveform = self._wave_xy[qubit]
                     delay = self.wave_xy_delays[qubit]
@@ -1313,6 +1324,45 @@ class SequenceToWaveforms:
 
             self.pulses_2qb[n] = pulse
 
+        # iSWAP coupler gate: coupler pulses
+        for n, pulse in enumerate(self.pulses_cplr):
+            # global parameters
+            pulse = (getattr(pulses, config.get('Pulse type, 2QB (Coupler)'))
+                     (complex=False))
+
+            pulse.truncation_range = config.get('Truncation range, 2QB (Coupler)')
+            pulse.start_at_zero = config.get('Start at zero, 2QB (Coupler)')    
+            pulse.width = config.get('Width 1, 2QB (Coupler)')
+            pulse.plateau = config.get('Plateau 1, 2QB (Coupler)')
+            pulse.amplitude = config.get('Amplitude 1, 2QB (Coupler)')
+
+            pulse.width1 = config.get('Width 1, 2QB (Coupler)')
+            pulse.plateau1 = config.get('Plateau 1, 2QB (Coupler)')
+            pulse.amplitude1 = config.get('Amplitude 1, 2QB (Coupler)')
+
+            pulse.width2 = config.get('Width 2, 2QB (Coupler)')
+            pulse.plateau2 = config.get('Plateau 2, 2QB (Coupler)')
+            pulse.amplitude2 = config.get('Amplitude 2, 2QB (Coupler)')
+
+            self.pulses_cplr[n] = pulse
+
+        # iSWAP coupler gate: tunable qubit (QB2) pulses
+        for n, pulse in enumerate(self.pulses_tqb):
+            # global parameters
+            pulse = (getattr(pulses, config.get('Pulse type, 2QB (Tunable QB)'))
+                     (complex=False))
+
+            pulse.truncation_range = config.get('Truncation range, 2QB (Tunable QB)')
+            pulse.start_at_zero = config.get('Start at zero, 2QB (Tunable QB)')
+            pulse.width = config.get('Width, 2QB (Tunable QB)')
+            pulse.plateau = config.get('Plateau, 2QB (Tunable QB)')
+            pulse.amplitude = config.get('Amplitude, 2QB (Tunable QB)')
+
+            self.pulses_tqb[n] = pulse
+            
+            
+        gates.iSWAP_Cplr.new_angles(config.get('QB1 Phi 2QB (Coupler)') / 180 * np.pi,
+                                 config.get('QB2 Phi 2QB (Coupler)') / 180 * np.pi)
         # predistortion
         self.perform_predistortion = config.get('Predistort waveforms', False)
         # update all predistorting objects
