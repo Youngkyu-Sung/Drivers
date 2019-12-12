@@ -325,6 +325,36 @@ class CPHASE_with_1qb_phases(CompositeGate):
     def __str__(self):
         return "CZ"
 
+class iSWAP_Cplr_with_1qb_phases(CompositeGate):
+    """iSWAP Coupler gate followed by single qubit Z rotations.
+
+    Parameters
+    ----------
+    phi1 : float
+        Z rotation angle for qubit 1.
+    phi2 : float
+        Z rotation angle for qubit 2.
+
+    """
+
+    def __init__(self, phi1, phi2):
+        super().__init__(n_qubit=3)
+        self.add_gate([IdentityGate(), CplrGate(), TQBGate()])
+        self.add_gate([VirtualZGate(phi1), IdentityGate(), VirtualZGate(phi2)])
+
+    def new_angles(self, phi1, phi2):
+        """Update the angles of the single qubit rotations.
+
+        Parameters
+        ----------
+        phi1 : float
+            Z rotation angle for qubit 1.
+        phi2 : float
+            Z rotation angle for qubit 2.
+
+        """
+        self.__init__(phi1, phi2)
+
 
 I = IdentityGate(width=None)
 I0 = IdentityGate(width=0)
@@ -376,6 +406,8 @@ CNOT = CompositeGate(n_qubit=2, name='CNOT')
 CNOT.add_gate(H, 1)
 CNOT.add_gate(CZ, [0, 1])
 CNOT.add_gate(H, 1)
+
+iSWAP_Cplr = iSWAP_Cplr_with_1qb_phases(0, 0) # start with 0, 0 as the single qubit phase shifts
 
 if __name__ == '__main__':
     pass
