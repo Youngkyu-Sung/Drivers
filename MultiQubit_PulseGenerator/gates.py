@@ -208,29 +208,38 @@ class RabiGate(SingleQubitXYRotation):
         return pulse
 
 
-class CplrGate(SingleQubitZRotation):
-    def __init__(self, name=None):
-        super().__init__(theta=np.pi)
+class CplrGate(OneQubitGate):
+    def __init__(self, name='Cplr'):
+        # super().__init__(theta=np.pi)
         self.name = name
 
+    def get_adjusted_pulse(self, pulse):
+        log.info('get_adjusted_pulse CPLr Gate')
+        log.info(pulse)
+        self.pulse = copy(pulse)
+        return self.pulse
+
     def __str__(self):
-        if self.name is None:
-            return "Cplr"
-        else:
-            return self.name
+        return "Cplr"
+    def __repr__(self):
+        return self.__str__()
+
     """Coupler Qubit (2QB gate using Cplr)"""
 
-class TQBGate(SingleQubitZRotation):
-    def __init__(self, name=None):
-        super().__init__(theta=np.pi)
+class TQBGate(OneQubitGate):
+    def __init__(self, name='TQB'):
+        # super().__init__(theta=np.pi)
         self.name = name
-    def __str__(self):
-        if self.name is None:
-            return "TQB"
-        else:
-            return self.name
+
+    def get_adjusted_pulse(self, pulse):
+        pulse = copy(pulse)
+        return pulse
     """Tunable Qubit (2QB gate using Cplr)"""
 
+    def __str__(self):
+        return "TQB"
+    def __repr__(self):
+        return self.__str__()
 class CompositeGate:
     """Multiple gates in one object.
 
@@ -246,7 +255,7 @@ class CompositeGate:
 
     """
 
-    def __init__(self, n_qubit, name=None):
+    def __init__(self, n_qubit, name='None'):
         self.n_qubit = n_qubit
         self.sequence = []
         self.name = name
@@ -362,7 +371,7 @@ class iSWAP_Cplr_with_1qb_phases(CompositeGate):
     """
 
     def __init__(self, phi1, phi2):
-        super().__init__(n_qubit=3)
+        super().__init__(n_qubit=3, name = 'iSWAP_Cplr')
         self.add_gate([IdentityGate(), CplrGate(), TQBGate()])
         self.add_gate([VirtualZGate(phi1), IdentityGate(), VirtualZGate(phi2)])
 
@@ -379,6 +388,10 @@ class iSWAP_Cplr_with_1qb_phases(CompositeGate):
         """
         self.__init__(phi1, phi2)
 
+    def __str__(self):
+        return "iSWAP_Cplr"
+    def __repr__(self):
+        return self.__str__()
 
 I = IdentityGate(width=None)
 I0 = IdentityGate(width=0)

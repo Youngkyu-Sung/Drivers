@@ -21,6 +21,6 @@ class CustomSequence(Sequence):
         # multi_gate_seq = []
         # multi_gate_seq.append(gates.iSWAP_Cplr)
         self.add_gate(qubit=[0,1,2], gate=gates.iSWAP_Cplr)
-
+        # pass
 if __name__ == '__main__':
     pass

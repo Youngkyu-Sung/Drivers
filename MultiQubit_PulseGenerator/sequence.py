@@ -719,9 +719,9 @@ class SequenceToWaveforms:
         elif isinstance(gate, gates.TwoQubitGate):
             pulse = gate.get_adjusted_pulse(self.pulses_2qb[qubit[0]])
         elif isinstance(gate, gates.CplrGate):
-            pulse = gate.get_adjusted_pulse(self.pulses_2qb_cplr[qubit])
+            pulse = gate.get_adjusted_pulse(self.pulses_2qb_cplr[0])
         elif isinstance(gate, gates.TQBGate):
-            pulse = gate.get_adjusted_pulse(self.pulses_2qb_tqb[qubit])
+            pulse = gate.get_adjusted_pulse(self.pulses_2qb_tqb[0])
         elif isinstance(gate, gates.ReadoutGate):
             pulse = gate.get_adjusted_pulse(self.pulses_readout[qubit])
         elif isinstance(gate, gates.CustomGate):
@@ -1047,11 +1047,22 @@ class SequenceToWaveforms:
                     qubit = qubit[0]
                 gate_obj = gate.gate
 
-
                 if isinstance(gate_obj,
                               (gates.IdentityGate, gates.VirtualZGate)):
                     continue
                 elif isinstance(gate_obj, gates.SingleQubitZRotation):
+                    waveform = self._wave_z[qubit]
+                    delay = self.wave_z_delays[qubit]
+                    if self.compensate_crosstalk:
+                        crosstalk = self._crosstalk.compensation_matrix[:,
+                                                                        qubit]
+                elif isinstance(gate_obj, gates.CplrGate):
+                    waveform = self._wave_z[qubit]
+                    delay = self.wave_z_delays[qubit]
+                    if self.compensate_crosstalk:
+                        crosstalk = self._crosstalk.compensation_matrix[:,
+                                                                        qubit]
+                elif isinstance(gate_obj, gates.TQBGate):
                     waveform = self._wave_z[qubit]
                     delay = self.wave_z_delays[qubit]
                     if self.compensate_crosstalk:
@@ -1088,6 +1099,8 @@ class SequenceToWaveforms:
                 if (self.compensate_crosstalk and
                     isinstance(gate_obj,
                                (gates.SingleQubitZRotation,
+                                gates.CplrGate,
+                                gates.TQBGate,
                                 gates.TwoQubitGate))):
                     for q in range(self.n_qubit):
                         waveform = self._wave_z[q]
@@ -1325,14 +1338,11 @@ class SequenceToWaveforms:
                 break
             # pulses are indexed from 1 in Labber
             _str = '%d-%d' % (n + 1, n + 2)
-            log.info(_str)
             num_pulses = int(config.get('Pulse number, 2QB (Cplr, %s)'%_str))
             list_pulses = []
             list_delays = []
             for i in range(num_pulses):
                 # global parameters
-                log.info(str('Pulse type #%d, 2QB (Cplr, %s)'%(i+1, _str)))
-                log.info(config.get('Pulse type #%d, 2QB (Cplr, %s)'%(i+1, _str)))
                 pulse = (getattr(pulses, config.get('Pulse type #%d, 2QB (Cplr, %s)'%(i+1, _str))))(complex=False)
 
                 if config.get('Pulse type #%d, 2QB (Cplr, %s)'%(i+1, _str)) in ['CZ', 'NetZero']:
@@ -1415,16 +1425,14 @@ class SequenceToWaveforms:
         for n, pulse in enumerate(self.pulses_2qb_tqb):
             if (n>0):
                 break
+
             # pulses are indexed from 1 in Labber
             _str = '%d-%d' % (n + 1, n + 2)
-            log.info(_str)
             num_pulses = int(config.get('Pulse number, 2QB (TQB, %s)'%_str))
             list_pulses = []
             list_delays = []
             for i in range(num_pulses):
                 # global parameters
-                log.info(str('Pulse type #%d, 2QB (TQB, %s)'%(i+1, _str)))
-                log.info(config.get('Pulse type #%d, 2QB (TQB, %s)'%(i+1, _str)))
                 pulse = (getattr(pulses, config.get('Pulse type #%d, 2QB (TQB, %s)'%(i+1, _str))))(complex=False)
 
                 if config.get('Pulse type #%d, 2QB (TQB, %s)'%(i+1, _str)) in ['CZ', 'NetZero']:

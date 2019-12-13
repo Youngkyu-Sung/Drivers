@@ -353,17 +353,63 @@ class CompositePulse():
 
     def total_duration(self):
         _duration = 0
-        for i in range(self.list_pulses):
+        for i in range(len(self.list_pulses)):
             _pulse = self.list_pulses[i]
-            _duration = max(_duration, _pulse.total_duration() + self.list_delays[i])
+            if i > 0:
+                _duration = max(_duration, _pulse.total_duration() + self.list_delays[i-1] )
+            else:
+                _duration = max(_duration, _pulse.total_duration())
+            # log.info(_duration, _pulse.total_duration, self.list_delays[i-1])
+        log.info('total duration: ' + str(_duration))
+            # log.info('pulse_duration: ' + str(_pulse.total_duration()))
+            # log.info('delay: ' + str(self.list_delays[i-1]))
         return _duration
 
-    def calculate_envelope(self, t0, t):
-        _envelope = None
-        for i in range(self.list_pulses):
-            _pulse = self.list_pulses[i]
-            _envelope = _pulse.calculate_envelope(t0, t)
-        return _envelope
+    # def calculate_envelope(self, t0, t):
+    #     _envelope = 0
+    #     for i in range(len(self.list_pulses)):
+    #         _pulse = self.list_pulses[i]
+    #         if i > 0:
+    #             t_center = t0 + self.list_delays[i-1]
+    #         else:
+    #             t_center = t0
+    #         y = _pulse.calculate_envelope(t_center, t)
+    #         _envelope+= y
+    #     return _envelope
 
+    def calculate_waveform(self, t0, t):
+        _waveform = 0
+        for i in range(len(self.list_pulses)):
+            _pulse = self.list_pulses[i]
+            if i > 0:
+                t_center = t0 + self.list_delays[i-1] + (_pulse.total_duration() - self.total_duration())*0.5
+            else:
+                t_center = t0 + (_pulse.total_duration() - self.total_duration())*0.5
+
+            y = _pulse.calculate_envelope(t_center, t)
+            # Make sure the waveform is zero outside the pulse
+            y[t < (t_center - _pulse.total_duration() / 2)] = 0
+            y[t > (t_center + _pulse.total_duration() / 2)] = 0
+
+            if _pulse.use_drag and _pulse.complex:
+                beta = _pulse.drag_coefficient / (t[1] - t[0])
+                y = y + 1j * beta * np.gradient(y)
+                y = y * np.exp(1j * 2 * np.pi * _pulse.drag_detuning *
+                               (t - t_center + _pulse.total_duration() / 2))
+
+            if _pulse.complex:
+                # Apply phase and SSB
+                phase = _pulse.phase
+                # single-sideband mixing, get frequency
+                omega = 2 * np.pi * _pulse.frequency
+                # apply SSBM transform
+                data_i = (y.real * np.cos(omega * t - phase) +
+                          -y.imag * np.cos(omega * t - phase + +np.pi / 2))
+                data_q = (y.real * np.sin(omega * t - phase) +
+                          -y.imag * np.sin(omega * t - phase + +np.pi / 2))
+                y = data_i + 1j * data_q
+
+            _waveform += y
+        return _waveform
 if __name__ == '__main__':
     pass
