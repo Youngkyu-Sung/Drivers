@@ -31,7 +31,6 @@ class TwoQubitGate(BaseGate):
         return 2
 
 
-
 class SingleQubitXYRotation(OneQubitGate):
     """Single qubit rotations around the XY axes.
 
@@ -207,29 +206,6 @@ class RabiGate(SingleQubitXYRotation):
         pulse.phase = self.phase
         return pulse
 
-
-class CplrGate(SingleQubitZRotation):
-    def __init__(self, name=None):
-        super().__init__(theta=np.pi)
-        self.name = name
-
-    def __str__(self):
-        if self.name is None:
-            return "Cplr"
-        else:
-            return self.name
-    """Coupler Qubit (2QB gate using Cplr)"""
-
-class TQBGate(SingleQubitZRotation):
-    def __init__(self, name=None):
-        super().__init__(theta=np.pi)
-        self.name = name
-    def __str__(self):
-        if self.name is None:
-            return "TQB"
-        else:
-            return self.name
-    """Tunable Qubit (2QB gate using Cplr)"""
 
 class CompositeGate:
     """Multiple gates in one object.
@@ -432,6 +408,6 @@ CNOT.add_gate(CZ, [0, 1])
 CNOT.add_gate(H, 1)
 
 iSWAP_Cplr = iSWAP_Cplr_with_1qb_phases(0, 0) # start with 0, 0 as the single qubit phase shifts
-# CplrGate = CustomGate()
+
 if __name__ == '__main__':
     pass
