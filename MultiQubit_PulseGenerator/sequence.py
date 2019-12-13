@@ -529,6 +529,8 @@ class SequenceToWaveforms:
         self.pulses_1qb_z = [None for n in range(self.n_qubit)]
         self.pulses_2qb = [None for n in range(self.n_qubit - 1)]
         self.pulses_readout = [None for n in range(self.n_qubit)]
+        self.pulses_2qb_cplr = [None for n in range(self.n_qubit)]
+        self.pulses_2qb_tqb = [None for n in range(self.n_qubit)]
 
         # cross-talk
         self.compensate_crosstalk = False
@@ -716,6 +718,10 @@ class SequenceToWaveforms:
             pulse = gate.get_adjusted_pulse(self.pulses_1qb_xy[qubit])
         elif isinstance(gate, gates.TwoQubitGate):
             pulse = gate.get_adjusted_pulse(self.pulses_2qb[qubit[0]])
+        elif isinstance(gate, gates.CplrGate):
+            pulse = gate.get_adjusted_pulse(self.pulses_2qb_cplr[qubit])
+        elif isinstance(gate, gates.TQBGate):
+            pulse = gate.get_adjusted_pulse(self.pulses_2qb_tqb[qubit])
         elif isinstance(gate, gates.ReadoutGate):
             pulse = gate.get_adjusted_pulse(self.pulses_readout[qubit])
         elif isinstance(gate, gates.CustomGate):
@@ -1313,6 +1319,135 @@ class SequenceToWaveforms:
 
             self.pulses_2qb[n] = pulse
 
+        # two-qubit (coupler) pulses: composite pulses
+        for n, pulse in enumerate(self.pulses_2qb_cplr):
+            if (n>0):
+                break
+            # pulses are indexed from 1 in Labber
+            _str = '%d-%d' % (n + 1, n + 2)
+            log.info(_str)
+            num_pulses = int(config.get('Pulse number, 2QB (Cplr, %s)'%_str))
+            list_pulses = []
+            list_delays = []
+            for i in range(num_pulses):
+                # global parameters
+                log.info(str('Pulse type #%d, 2QB (Cplr, %s)'%(i+1, _str)))
+                log.info(config.get('Pulse type #%d, 2QB (Cplr, %s)'%(i+1, _str)))
+                pulse = (getattr(pulses, config.get('Pulse type #%d, 2QB (Cplr, %s)'%(i+1, _str))))(complex=False)
+
+                if config.get('Pulse type #%d, 2QB (Cplr, %s)'%(i+1, _str)) in ['CZ', 'NetZero']:
+                    pass
+                else:
+                    pulse.truncation_range = config.get('Truncation range #%d, 2QB (Cplr, %s)'%(i+1, _str))
+                    pulse.start_at_zero = config.get('Start at zero #%d, 2QB (Cplr, %s)'%(i+1, _str))
+                    # pulse shape
+                    pulse.width = config.get('Width #%d, 2QB (Cplr, %s)'%(i+1, _str))
+                    pulse.plateau = config.get('Plateau #%d, 2QB (Cplr, %s)'%(i+1, _str))
+                    # pulse-specific parameters
+                    pulse.amplitude = config.get('Amplitude #%d, 2QB (Cplr, %s)'%(i+1, _str))
+
+                list_pulses.append(pulse)
+
+                if i > 0:
+                    list_delays.append(config.get('Pulse delay #%d, 2QB (Cplr, %s)'%(i+1, _str)))
+
+            composite_pulse = pulses.CompositePulse(list_pulses = list_pulses, list_delays = list_delays)
+            # gates.CZ.new_angles(
+            #     config.get('QB1 Phi 2QB #12'), config.get('QB2 Phi 2QB #12'))
+
+            self.pulses_2qb_cplr[n] = composite_pulse
+
+            #     # spectra
+            #     if config.get('Assume linear dependence' + s, True):
+            #         pulse.qubit = None
+            #     else:
+            #         pulse.qubit = self.qubits[n]
+
+            #     # Get Fourier values
+            #     if d[config.get('Fourier terms, 2QB')] == 4:
+            #         pulse.Lcoeff = np.array([
+            #             config.get('L1, 2QB' + s),
+            #             config.get('L2, 2QB' + s),
+            #             config.get('L3, 2QB' + s),
+            #             config.get('L4, 2QB' + s)
+            #         ])
+            #     elif d[config.get('Fourier terms, 2QB')] == 3:
+            #         pulse.Lcoeff = np.array([
+            #             config.get('L1, 2QB' + s),
+            #             config.get('L2, 2QB' + s),
+            #             config.get('L3, 2QB' + s)
+            #         ])
+            #     elif d[config.get('Fourier terms, 2QB')] == 2:
+            #         pulse.Lcoeff = np.array(
+            #             [config.get('L1, 2QB' + s),
+            #              config.get('L2, 2QB' + s)])
+            #     elif d[config.get('Fourier terms, 2QB')] == 1:
+            #         pulse.Lcoeff = np.array([config.get('L1, 2QB' + s)])
+
+            #     pulse.Coupling = config.get('Coupling, 2QB' + s)
+            #     pulse.Offset = config.get('f11-f20 initial, 2QB' + s)
+            #     pulse.amplitude = config.get('f11-f20 final, 2QB' + s)
+            #     pulse.dfdV = config.get('df/dV, 2QB' + s)
+            #     pulse.negative_amplitude = config.get('Negative amplitude' + s)
+
+            #     pulse.calculate_cz_waveform()
+
+            # else:
+            #     pulse.truncation_range = config.get('Truncation range, 2QB')
+            #     pulse.start_at_zero = config.get('Start at zero, 2QB')
+            #     # pulse shape
+            #     if config.get('Uniform 2QB pulses'):
+            #         pulse.width = config.get('Width, 2QB')
+            #         pulse.plateau = config.get('Plateau, 2QB')
+            #     else:
+            #         pulse.width = config.get('Width, 2QB' + s)
+            #         pulse.plateau = config.get('Plateau, 2QB' + s)
+            #     # pulse-specific parameters
+            #     pulse.amplitude = config.get('Amplitude, 2QB' + s)
+
+            # gates.CZ.new_angles(
+            #     config.get('QB1 Phi 2QB #12'), config.get('QB2 Phi 2QB #12'))
+
+            # self.pulses_2qb[n] = pulse
+
+
+        # two-qubit (tunable qubit) pulses: composite pulses
+        for n, pulse in enumerate(self.pulses_2qb_tqb):
+            if (n>0):
+                break
+            # pulses are indexed from 1 in Labber
+            _str = '%d-%d' % (n + 1, n + 2)
+            log.info(_str)
+            num_pulses = int(config.get('Pulse number, 2QB (TQB, %s)'%_str))
+            list_pulses = []
+            list_delays = []
+            for i in range(num_pulses):
+                # global parameters
+                log.info(str('Pulse type #%d, 2QB (TQB, %s)'%(i+1, _str)))
+                log.info(config.get('Pulse type #%d, 2QB (TQB, %s)'%(i+1, _str)))
+                pulse = (getattr(pulses, config.get('Pulse type #%d, 2QB (TQB, %s)'%(i+1, _str))))(complex=False)
+
+                if config.get('Pulse type #%d, 2QB (TQB, %s)'%(i+1, _str)) in ['CZ', 'NetZero']:
+                    pass
+                else:
+                    pulse.truncation_range = config.get('Truncation range #%d, 2QB (TQB, %s)'%(i+1, _str))
+                    pulse.start_at_zero = config.get('Start at zero #%d, 2QB (TQB, %s)'%(i+1, _str))
+                    # pulse shape
+                    pulse.width = config.get('Width #%d, 2QB (TQB, %s)'%(i+1, _str))
+                    pulse.plateau = config.get('Plateau #%d, 2QB (TQB, %s)'%(i+1, _str))
+                    # pulse-specific parameters
+                    pulse.amplitude = config.get('Amplitude #%d, 2QB (TQB, %s)'%(i+1, _str))
+
+                list_pulses.append(pulse)
+
+                if i > 0:
+                    list_delays.append(config.get('Pulse delay #%d, 2QB (TQB, %s)'%(i+1, _str)))
+
+            composite_pulse = pulses.CompositePulse(list_pulses = list_pulses, list_delays = list_delays)
+            # gates.CZ.new_angles(
+            #     config.get('QB1 Phi 2QB #12'), config.get('QB2 Phi 2QB #12'))
+
+            self.pulses_2qb_tqb[n] = composite_pulse
         # predistortion
         self.perform_predistortion = config.get('Predistort waveforms', False)
         # update all predistorting objects

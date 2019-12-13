@@ -346,6 +346,24 @@ class NetZero(CZ):
         return (self.slepian.calculate_envelope(t0-self.total_duration()/4, t) -
                 self.slepian.calculate_envelope(t0+self.total_duration()/4, t))
 
+class CompositePulse():
+    def __init__(self, *args, **kwargs):
+        self.list_pulses = kwargs.get('list_pulses', []) # list of Pulse() objects 
+        self.list_delays = kwargs.get('list_delays', [])
+
+    def total_duration(self):
+        _duration = 0
+        for i in range(self.list_pulses):
+            _pulse = self.list_pulses[i]
+            _duration = max(_duration, _pulse.total_duration() + self.list_delays[i])
+        return _duration
+
+    def calculate_envelope(self, t0, t):
+        _envelope = None
+        for i in range(self.list_pulses):
+            _pulse = self.list_pulses[i]
+            _envelope = _pulse.calculate_envelope(t0, t)
+        return _envelope
 
 if __name__ == '__main__':
     pass
