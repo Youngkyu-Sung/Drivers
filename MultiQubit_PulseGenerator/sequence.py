@@ -1346,7 +1346,46 @@ class SequenceToWaveforms:
                 pulse = (getattr(pulses, config.get('Pulse type #%d, 2QB (Cplr, %s)'%(i+1, _str))))(complex=False)
 
                 if config.get('Pulse type #%d, 2QB (Cplr, %s)'%(i+1, _str)) in ['CZ', 'NetZero']:
-                    pass
+                    pulse.F_Terms = d[config.get('Fourier terms #%d, 2QB (Cplr, %s)'%(i+1, _str))]
+                    pulse.width = config.get('Width #%d, 2QB (Cplr, %s)'%(i+1, _str))
+                    pulse.plateau = config.get('Plateau #%d, 2QB (Cplr, %s)'%(i+1, _str))
+
+                    # spectra
+                    if config.get('Assume linear dependence  #%d, 2QB (Cplr, %s)'%(i+1, _str), True):
+                        pulse.qubit = None
+                    else:
+                        pulse.qubit = self.qubits[n]
+
+                    # Get Fourier values
+                    if d[config.get('Fourier terms #%d, 2QB (Cplr, %s)'%(i+1, _str))] == 4:
+                        pulse.Lcoeff = np.array([
+                            config.get('L1 #%d, 2QB (Cplr, %s)'%(i+1, _str)),
+                            config.get('L2 #%d, 2QB (Cplr, %s)'%(i+1, _str)),
+                            config.get('L3 #%d, 2QB (Cplr, %s)'%(i+1, _str)),
+                            config.get('L4 #%d, 2QB (Cplr, %s)'%(i+1, _str))
+                        ])
+                    elif d[config.get('Fourier terms, 2QB')] == 3:
+                        pulse.Lcoeff = np.array([
+                            config.get('L1 #%d, 2QB (Cplr, %s)'%(i+1, _str)),
+                            config.get('L2 #%d, 2QB (Cplr, %s)'%(i+1, _str)),
+                            config.get('L3 #%d, 2QB (Cplr, %s)'%(i+1, _str))
+                        ])
+                    elif d[config.get('Fourier terms, 2QB')] == 2:
+                        pulse.Lcoeff = np.array([
+                            config.get('L1 #%d, 2QB (Cplr, %s)'%(i+1, _str)),
+                            config.get('L2 #%d, 2QB (Cplr, %s)'%(i+1, _str))
+                        ])
+                    elif d[config.get('Fourier terms, 2QB')] == 1:
+                        pulse.Lcoeff = np.array([config.get('L1 #%d, 2QB (Cplr, %s)'%(i+1, _str))])
+
+
+                    pulse.Coupling = config.get('Coupling #%d, 2QB (Cplr, %s)'%(i+1, _str))
+                    pulse.Offset = config.get('f11-f20 initial, 2QB' + s)
+                    pulse.amplitude = config.get('f11-f20 final, 2QB' + s)
+                    pulse.dfdV = config.get('df/dV, 2QB' + s)
+                    pulse.negative_amplitude = config.get('Negative amplitude' + s)
+
+                    pulse.calculate_cz_waveform()
                 else:
                     pulse.truncation_range = config.get('Truncation range #%d, 2QB (Cplr, %s)'%(i+1, _str))
                     pulse.start_at_zero = config.get('Start at zero #%d, 2QB (Cplr, %s)'%(i+1, _str))
