@@ -53,6 +53,13 @@ class Pulse:
         self.start_at_zero = False
         self.complex = complex
 
+        self.dfdV = 500E6
+        self.qubit = None
+        self.negative_amplitude = False
+        self.init_freq = 6e9
+        self.final_freq = 4e9
+
+
     def total_duration(self):
         """Get the total duration for the pulse.
 
@@ -122,6 +129,9 @@ class Pulse:
             data_q = (y.real * np.sin(omega * t - phase) +
                       -y.imag * np.sin(omega * t - phase + +np.pi / 2))
             y = data_i + 1j * data_q
+
+
+
         return y
 
 
@@ -163,6 +173,16 @@ class Gaussian(Pulse):
             values = values / values.max()
         values = values * self.amplitude
 
+
+        if self.qubit is None:
+            pass
+        else:
+            values = self.qubit.df_to_dV(df)
+            
+        if self.negative_amplitude is True:
+            values = -values
+
+
         return values
 
 
@@ -180,7 +200,17 @@ class Ramp(Pulse):
         vFall[vFall > 1.0] = 1.0
         values = vRise * vFall
 
-        values = values * self.amplitude
+
+        if self.qubit is None:
+            values = values * self.amplitude
+        else:
+            final_V = 1
+            init_V = 0
+            values = (values-init_V)/(final_V-init_V)*(self.final_freq-self.init_freq) + self.init_freq
+            values = self.qubit.f_to_V(values)
+            
+        if self.negative_amplitude is True:
+            values = -values
 
         return values
 
@@ -197,7 +227,14 @@ class Square(Pulse):
         values = ((t >= (t0 - (self.width + self.plateau) / 2)) &
                   (t < (t0 + (self.width + self.plateau) / 2)))
 
-        values = values * self.amplitude
+
+        if self.qubit is None:
+            values = values * self.amplitude
+        else:
+            values = self.qubit.df_to_dV(df)
+
+        if self.negative_amplitude is True:
+            values = -values
 
         return values
 
@@ -209,18 +246,35 @@ class Cosine(Pulse):
     def calculate_envelope(self, t0, t):
         tau = self.width
         if self.plateau == 0:
-            values = (self.amplitude / 2 *
+            values = (1 / 2 *
                       (1 - np.cos(2 * np.pi * (t - t0 + tau / 2) / tau)))
         else:
-            values = np.ones_like(t) * self.amplitude
-            values[t < t0 - self.plateau / 2] = self.amplitude / 2 * \
+            values = np.ones_like(t)
+            values[t < t0 - self.plateau / 2] = 1 / 2 * \
                 (1 - np.cos(2 * np.pi *
                             (t[t < t0 - self.plateau / 2] - t0 +
                              self.plateau / 2 + tau / 2) / tau))
-            values[t > t0 + self.plateau / 2] = self.amplitude / 2 * \
+            values[t > t0 + self.plateau / 2] = 1 / 2 * \
                 (1 - np.cos(2 * np.pi *
                             (t[t > t0 + self.plateau / 2] - t0 -
                              self.plateau / 2 + tau / 2) / tau))
+
+
+        if self.qubit is None:
+            values = values * self.amplitude
+        else:
+            final_V = 1
+            init_V = 0
+            log.info('final_V: ' + str(final_V) + ', init_V: ' + str(init_V))
+            log.info('values')
+            log.info(values)
+            values = (values-init_V)/(final_V-init_V)*(self.final_freq-self.init_freq) + self.init_freq
+            log.info(values)
+            values = self.qubit.f_to_V(values)
+            
+        if self.negative_amplitude is True:
+            values = -values
+
 
         return values
 
@@ -233,9 +287,9 @@ class CZ(Pulse):
         self.Coupling = 20E6
         self.Offset = 300E6
         self.Lcoeff = np.array([0.3])
-        self.dfdV = 500E6
-        self.qubit = None
-        self.negative_amplitude = False
+        # self.dfdV = 500E6
+        # self.qubit = None
+        # self.negative_amplitude = False
 
         self.t_tau = None
 
