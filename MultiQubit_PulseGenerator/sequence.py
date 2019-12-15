@@ -1487,8 +1487,58 @@ class SequenceToWaveforms:
                 pulse = (getattr(pulses, config.get('Pulse type #%d, 2QB (TQB, %s)'%(i+1, _str))))(complex=False)
 
                 if config.get('Pulse type #%d, 2QB (TQB, %s)'%(i+1, _str)) in ['CZ', 'NetZero']:
-                    pass
+                    # spectra
+                    if config.get('Assume linear dependence  #%d, 2QB (TQB, %s)'%(i+1, _str), True):
+                        pulse.qubit = None
+                    else:
+                        pulse.qubit = self.qubits[n]
+                    pulse.dfdV = config.get('df/dV #%d, 2QB (TQB, %s)'%(i+1, _str))
+                    pulse.negative_amplitude = False
+
+                    pulse.F_Terms = d[config.get('Fourier terms #%d, 2QB (TQB, %s)'%(i+1, _str))]
+                    pulse.width = config.get('Width #%d, 2QB (TQB, %s)'%(i+1, _str))
+                    pulse.plateau = config.get('Plateau #%d, 2QB (TQB, %s)'%(i+1, _str))
+
+
+                    # Get Fourier values
+                    if d[config.get('Fourier terms #%d, 2QB (TQB, %s)'%(i+1, _str))] == 4:
+                        pulse.Lcoeff = np.array([
+                            config.get('L1 #%d, 2QB (Cplr, %s)'%(i+1, _str)),
+                            config.get('L2 #%d, 2QB (Cplr, %s)'%(i+1, _str)),
+                            config.get('L3 #%d, 2QB (Cplr, %s)'%(i+1, _str)),
+                            config.get('L4 #%d, 2QB (Cplr, %s)'%(i+1, _str))
+                        ])
+                    elif d[config.get('Fourier terms #%d, 2QB (TQB, %s)'%(i+1, _str))] == 3:
+                        pulse.Lcoeff = np.array([
+                            config.get('L1 #%d, 2QB (Cplr, %s)'%(i+1, _str)),
+                            config.get('L2 #%d, 2QB (Cplr, %s)'%(i+1, _str)),
+                            config.get('L3 #%d, 2QB (Cplr, %s)'%(i+1, _str))
+                        ])
+                    elif d[config.get('Fourier terms #%d, 2QB (TQB, %s)'%(i+1, _str))] == 2:
+                        pulse.Lcoeff = np.array([
+                            config.get('L1 #%d, 2QB (Cplr, %s)'%(i+1, _str)),
+                            config.get('L2 #%d, 2QB (Cplr, %s)'%(i+1, _str))
+                        ])
+                    elif d[config.get('Fourier terms #%d, 2QB (TQB, %s)'%(i+1, _str))] == 1:
+                        pulse.Lcoeff = np.array([config.get('L1 #%d, 2QB (TQB, %s)'%(i+1, _str))])
+
+
+                    pulse.Coupling = config.get('f101-f020 Coupling #%d, 2QB (TQB, %s)'%(i+1, _str))
+                    pulse.Offset = config.get('f101-f020 initial #%d, 2QB (TQB, %s)'%(i+1, _str))
+                    pulse.amplitude = config.get('f101-f020 final #%d, 2QB (TQB, %s)'%(i+1, _str))
+
+                    pulse.calculate_cz_waveform()
                 else:
+                    # spectra
+                    if config.get('Convert from freq to amp #%d, 2QB (TQB, %s)'%(i+1, _str), True):
+                        pulse.qubit = self.qubits[2] #QB3 = TQB
+                        pulse.init_freq = config.get('Init freq #%d, 2QB (TQB, %s)'%(i+1, _str))
+                        pulse.final_freq = config.get('Final freq #%d, 2QB (TQB, %s)'%(i+1, _str))
+                    else:
+                        pulse.qubit = None
+                        pulse.init_freq = None
+                        pulse.final_freq = None
+                    
                     pulse.truncation_range = config.get('Truncation range #%d, 2QB (TQB, %s)'%(i+1, _str))
                     pulse.start_at_zero = config.get('Start at zero #%d, 2QB (TQB, %s)'%(i+1, _str))
                     # pulse shape
@@ -1503,10 +1553,11 @@ class SequenceToWaveforms:
                     list_delays.append(config.get('Pulse delay #%d, 2QB (TQB, %s)'%(i+1, _str)))
 
             composite_pulse = pulses.CompositePulse(list_pulses = list_pulses, list_delays = list_delays)
-            # gates.CZ.new_angles(
-            #     config.get('QB1 Phi 2QB #12'), config.get('QB2 Phi 2QB #12'))
 
             self.pulses_2qb_tqb[n] = composite_pulse
+            
+        gates.iSWAP_Cplr.new_angles(
+            config.get('FQB Phi, 2QB (Cplr, 1-2)'), config.get('TQB Phi, 2QB (Cplr, 1-2)'))
         # predistortion
         self.perform_predistortion = config.get('Predistort waveforms', False)
         # update all predistorting objects
