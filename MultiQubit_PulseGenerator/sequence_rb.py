@@ -240,7 +240,7 @@ def add_singleQ_based_twoQ_clifford(index, gate_seq_1, gate_seq_2, gate_seq_Cplr
 
     # randomly sample from single qubit cliffords (24)
     index_2 = (index // 24) % 24
-    
+
     add_singleQ_clifford(index_1, gate_seq_1)
     add_singleQ_clifford(index_2, gate_seq_2)
     if generator == 'iSWAP_Cplr':
@@ -672,7 +672,7 @@ class TwoQubit_RB(Sequence):
                 log.info('Seed number: %d'%(randomize))
                 rndnum = rnd.randint(0, 11519)
                 # rndnum = rnd.randint(0, 576) #Only applying single qubit gates
-                add_twoQ_clifford(rndnum, cliffordSeq1, cliffordSeq2, gate_seq_Cplr = clifford_seq_Cplr, generator = generator)
+                add_twoQ_clifford(rndnum, cliffordSeq1, cliffordSeq2, gate_seq_Cplr = cliffordSeqCplr, generator = generator)
                 # If interleave gate,
                 if interleave is True:
                     self.prev_interleaved_gate = interleaved_gate
@@ -988,6 +988,12 @@ class TwoQubit_RB(Sequence):
         config: dict
             The configuration
 
+        gate_seq_Cplr: list of class Gate (defined in "gates.py")
+            The gate sequence applied to Coupler (optional)
+
+        generator: string
+            Type of Native 2QB gate (optional)
+
         Returns
         -------
         (recovery_seq_1, recovery_seq_2): tuple of the lists
@@ -999,18 +1005,21 @@ class TwoQubit_RB(Sequence):
             '1; 0; 0; 0')  # initial state: ground state |00>
 
         qubit_state = np.matmul(self.evaluate_sequence(
-            gate_seq_1, gate_seq_2), qubit_state)
+            gate_seq_1, gate_seq_2, gate_seq_Cplr = gate_seq_Cplr, generator = generator), qubit_state)
 
         # find recovery gate which makes qubit_state return to initial state
         total_num_cliffords = 11520
         recovery_seq_1 = []
         recovery_seq_2 = []
+        recovery_seq_Cplr = []
 
         # Search the recovery gate in two Qubit clifford group
         find_cheapest = config['Find the cheapest recovery Clifford']
 
         cheapest_recovery_seq_1 = []
         cheapest_recovery_seq_2 = []
+        cheapest_recovery_seq_Cplr = []
+
         log.info('*** get recovery gate *** ')
         if (find_cheapest == True):
             min_N_2QB_gate = np.inf
@@ -1022,7 +1031,10 @@ class TwoQubit_RB(Sequence):
             if (use_lookup_table == True):
                 filepath_lookup_table = config['File path of the look-up table']
                 if len(filepath_lookup_table) == 0:
-                    filepath_lookup_table = os.path.join(path_currentdir, 'recovery_rb_table.pickle')
+                    if (generator == 'CZ'):
+                        filepath_lookup_table = os.path.join(path_currentdir, 'recovery_rb_table.pickle')
+                    elif (generator == 'iSWAP_Cplr'):
+                        filepath_lookup_table = os.path.join(path_currentdir, 'recovery_rb_table_iSWAP_Cplr.pickle')
                 if filepath_lookup_table != self.filepath_lookup_table:
                     log.info("Load Look-up table.")
                     self.filepath_lookup_table = filepath_lookup_table
@@ -1037,25 +1049,33 @@ class TwoQubit_RB(Sequence):
                         for str_Gate in seq2:
                             cheapest_recovery_seq_2.append(cliffords.strGate_to_Gate(str_Gate))
 
+                        if (generator == 'iSWAP_Cplr'):
+                            seqCplr = self.dict_lookup_table['recovery_gates_Cplr'][index]
+                            for str_Gate in seqCplr:
+                                cheapest_recovery_seq_Cplr.append(cliffords.strGate_to_Gate(str_Gate))
+
                         log.info("=== FOUND THE CHEAPEST RECOVERY GATE IN THE LOOK-UP TABLE. ===")
                         log.info("QB1 recovery gate sequence: " + str(seq1))
                         log.info("QB2 recovery gate sequence: " + str(seq2))
+                        if generator == 'iSWAP_Cplr':
+                            log.info("Coupler recovery gate sequence: " + str (seqCplr))
                         log.info("=================================================")
-                        return(cheapest_recovery_seq_1, cheapest_recovery_seq_2)
+                        return (cheapest_recovery_seq_1, cheapest_recovery_seq_2, cheapest_recovery_seq_Cplr)
 
             log.info("--- COULDN'T FIND THE RECOVERY GATE IN THE LOOK-UP TABLE... ---")
 
 
         # Calculate the matrix of the clifford sequence
-        matrix_cliffords = self.evaluate_sequence(gate_seq_1,gate_seq_2)
+        matrix_cliffords = self.evaluate_sequence(gate_seq_1,gate_seq_2, gate_seq_Cplr = gate_seq_Cplr, generator = generator)
 
         for i in range(total_num_cliffords):
             recovery_seq_1 = []
             recovery_seq_2 = []
-            add_twoQ_clifford(i, recovery_seq_1, recovery_seq_2)
+            recovery_seq_Cplr = []
+            add_twoQ_clifford(i, recovery_seq_1, recovery_seq_2, gate_seq_Cplr = recovery_seq_Cplr, generator = generator)
 
             # Calculate the matrix of the recovery clifford
-            matrix_recovery = self.evaluate_sequence(recovery_seq_1, recovery_seq_2)
+            matrix_recovery = self.evaluate_sequence(recovery_seq_1, recovery_seq_2, gate_seq_Cplr = recovery_seq_Cplr, generator = generator)
 
             # Calculate the matrix of the total clifford sequence
             matrix_total = np.matmul(matrix_recovery,matrix_cliffords)
@@ -1069,10 +1089,17 @@ class TwoQubit_RB(Sequence):
 
                     # count the numbers of the gates
                     for j in range(len(recovery_seq_1)):
-                        if (recovery_seq_1[j] == gates.CZ or recovery_seq_2[j] == gates.CZ):
-                            N_2QB_gate += 1
-                        else:
-                            N_1QB_gate += 2
+                        if generator == 'CZ':
+                            if (recovery_seq_1[j] == gates.CZ or recovery_seq_2[j] == gates.CZ):
+                                N_2QB_gate += 1
+                            else:
+                                N_1QB_gate += 2
+                        elif generator == 'iSWAP_Cplr':
+                            if (recovery_seq_Cplr[j] == gates.iSWAP_Cplr):
+                                N_2QB_gate += 1
+                            else:
+                                N_1QB_gate += 2
+
                         if (recovery_seq_1[j] == gates.I):
                             N_I_gate += 1
                         if (recovery_seq_2[j] == gates.I):
@@ -1107,21 +1134,23 @@ class TwoQubit_RB(Sequence):
                                 log.info('the cheapest sequence update! [N_2QB_gate, N_1QB_gate, N_I_gate, seq. index] ' + str([min_N_2QB_gate, min_N_1QB_gate, max_N_I_gate, cheapest_index]))
 
                 else:
-                    return(recovery_seq_1,recovery_seq_2)
+                    return(recovery_seq_1,recovery_seq_2, recovery_seq_Cplr)
 
         if (find_cheapest == True):
             recovery_seq_1 = []
             recovery_seq_2 = []
+            recovery_seq_Cplr = []
             log.info('The index of the cheapest recovery clifford: %d'%(cheapest_index))
-            add_twoQ_clifford(cheapest_index, recovery_seq_1, recovery_seq_2)
+            add_twoQ_clifford(cheapest_index, recovery_seq_1, recovery_seq_2, gate_seq_Cplr = recovery_seq_Cplr, generator = generator)
 
 
         if (recovery_seq_1 == [] and recovery_seq_2 == []):
             recovery_seq_1 = [None]
             recovery_seq_2 = [None]
+            recovery_seq_Cplr = [None]
 
 
-        return (recovery_seq_1, recovery_seq_2)
+        return (recovery_seq_1, recovery_seq_2, recovery_seq_Cplr)
 
 
 if __name__ == '__main__':

@@ -1523,9 +1523,9 @@ class SequenceToWaveforms:
                         pulse.Lcoeff = np.array([config.get('L1 #%d, 2QB (TQB, %s)'%(i+1, _str))])
 
 
-                    pulse.Coupling = config.get('f101-f020 Coupling #%d, 2QB (TQB, %s)'%(i+1, _str))
-                    pulse.Offset = config.get('f101-f020 initial #%d, 2QB (TQB, %s)'%(i+1, _str))
-                    pulse.amplitude = config.get('f101-f020 final #%d, 2QB (TQB, %s)'%(i+1, _str))
+                    pulse.Coupling = config.get('f101-f200 Coupling #%d, 2QB (TQB, %s)'%(i+1, _str))
+                    pulse.Offset = config.get('f101-f200 initial #%d, 2QB (TQB, %s)'%(i+1, _str))
+                    pulse.amplitude = config.get('f101-f200 final #%d, 2QB (TQB, %s)'%(i+1, _str))
 
                     pulse.calculate_cz_waveform()
                 else:
@@ -1555,7 +1555,7 @@ class SequenceToWaveforms:
             composite_pulse = pulses.CompositePulse(list_pulses = list_pulses, list_delays = list_delays)
 
             self.pulses_2qb_tqb[n] = composite_pulse
-            
+
         gates.iSWAP_Cplr.new_angles(
             config.get('FQB Phi, 2QB (Cplr, 1-2)'), config.get('TQB Phi, 2QB (Cplr, 1-2)'))
         # predistortion
