@@ -208,27 +208,24 @@ class RabiGate(SingleQubitXYRotation):
         return pulse
 
 
-class CplrGate(OneQubitGate):
-    def __init__(self, name='Cplr'):
-        # super().__init__(theta=np.pi)
+class ZGate_Cplr_iSWAP(OneQubitGate):
+    """Z pulses applied to a Coupler, to implement a iSWAP gate"""
+    def __init__(self, name='ZGate_Cplr_iSWAP'):
         self.name = name
 
     def get_adjusted_pulse(self, pulse):
-        log.info('get_adjusted_pulse CPLr Gate')
-        log.info(pulse)
         self.pulse = copy(pulse)
         return self.pulse
 
     def __str__(self):
-        return "Cplr"
+        return "ZGate_Cplr_iSWAP"
     def __repr__(self):
         return self.__str__()
 
-    """Coupler Qubit (2QB gate using Cplr)"""
 
-class TQBGate(OneQubitGate):
-    def __init__(self, name='TQB'):
-        # super().__init__(theta=np.pi)
+class ZGate_TQB_iSWAP(OneQubitGate):
+    """Z pulses applied to a tunable qubit, to implement a iSWAP gate"""
+    def __init__(self, name='ZGate_TQB_iSWAP'):
         self.name = name
 
     def get_adjusted_pulse(self, pulse):
@@ -237,7 +234,39 @@ class TQBGate(OneQubitGate):
     """Tunable Qubit (2QB gate using Cplr)"""
 
     def __str__(self):
-        return "TQB"
+        return "ZGate_TQB_iSWAP"
+    def __repr__(self):
+        return self.__str__()
+
+
+
+class ZGate_Cplr_CZ(OneQubitGate):
+    """Z pulses applied to a Coupler, to implement a CZ gate"""
+    def __init__(self, name='ZGate_Cplr_CZ'):
+        # super().__init__(theta=np.pi)
+        self.name = name
+
+    def get_adjusted_pulse(self, pulse):
+        self.pulse = copy(pulse)
+        return self.pulse
+
+    def __str__(self):
+        return "ZGate_Cplr_CZ"
+    def __repr__(self):
+        return self.__str__()
+
+class ZGate_TQB_iSWAP(OneQubitGate):
+    """Z pulses applied to a tunable qubit, to implement a CZ gate"""
+    def __init__(self, name='ZGate_TQB_CZ'):
+        # super().__init__(theta=np.pi)
+        self.name = name
+
+    def get_adjusted_pulse(self, pulse):
+        pulse = copy(pulse)
+        return pulse
+
+    def __str__(self):
+        return "ZGate_TQB_CZ"
     def __repr__(self):
         return self.__str__()
 class CompositeGate:
@@ -372,7 +401,7 @@ class iSWAP_Cplr_with_1qb_phases(CompositeGate):
 
     def __init__(self, phi1, phi2):
         super().__init__(n_qubit=3, name = 'iSWAP_Cplr')
-        self.add_gate([IdentityGate(), CplrGate(), TQBGate()])
+        self.add_gate([IdentityGate(), ZGate_Cplr_iSWAP(), ZGate_TQB_iSWAP()])
         self.add_gate([VirtualZGate(phi1), IdentityGate(), VirtualZGate(phi2)])
 
     def new_angles(self, phi1, phi2):
@@ -390,6 +419,41 @@ class iSWAP_Cplr_with_1qb_phases(CompositeGate):
 
     def __str__(self):
         return "iSWAP_Cplr"
+    def __repr__(self):
+        return self.__str__()
+
+class CZ_Cplr_with_1qb_phases(CompositeGate):
+    """iSWAP Coupler gate followed by single qubit Z rotations.
+
+    Parameters
+    ----------
+    phi1 : float
+        Z rotation angle for qubit 1.
+    phi2 : float
+        Z rotation angle for qubit 2.
+
+    """
+
+    def __init__(self, phi1, phi2):
+        super().__init__(n_qubit=3, name = 'iSWAP_Cplr')
+        self.add_gate([IdentityGate(), ZGate_Cplr_CZ(), ZGate_TQB_CZ()])
+        self.add_gate([VirtualZGate(phi1), IdentityGate(), VirtualZGate(phi2)])
+
+    def new_angles(self, phi1, phi2):
+        """Update the angles of the single qubit rotations.
+
+        Parameters
+        ----------
+        phi1 : float
+            Z rotation angle for qubit 1.
+        phi2 : float
+            Z rotation angle for qubit 2.
+
+        """
+        self.__init__(phi1, phi2)
+
+    def __str__(self):
+        return "CZ_Cplr"
     def __repr__(self):
         return self.__str__()
 
@@ -445,6 +509,7 @@ CNOT.add_gate(CZ, [0, 1])
 CNOT.add_gate(H, 1)
 
 iSWAP_Cplr = iSWAP_Cplr_with_1qb_phases(0, 0) # start with 0, 0 as the single qubit phase shifts
+CZ_Cplr = CZ_Cplr_with_1qb_phases(0, 0) # start with 0, 0 as the single qubit phase shifts
 # CplrGate = CustomGate()
 if __name__ == '__main__':
     pass

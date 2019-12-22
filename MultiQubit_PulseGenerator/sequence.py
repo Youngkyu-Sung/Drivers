@@ -529,8 +529,8 @@ class SequenceToWaveforms:
         self.pulses_1qb_z = [None for n in range(self.n_qubit)]
         self.pulses_2qb = [None for n in range(self.n_qubit - 1)]
         self.pulses_readout = [None for n in range(self.n_qubit)]
-        self.pulses_2qb_cplr = [None for n in range(self.n_qubit)]
-        self.pulses_2qb_tqb = [None for n in range(self.n_qubit)]
+        self.pulses_iSWAP_cplr = [None for n in range(self.n_qubit)]
+        self.pulses_iSWAP_tqb = [None for n in range(self.n_qubit)]
 
         # cross-talk
         self.compensate_crosstalk = False
@@ -719,9 +719,9 @@ class SequenceToWaveforms:
         elif isinstance(gate, gates.TwoQubitGate):
             pulse = gate.get_adjusted_pulse(self.pulses_2qb[qubit[0]])
         elif isinstance(gate, gates.CplrGate):
-            pulse = gate.get_adjusted_pulse(self.pulses_2qb_cplr[0])
+            pulse = gate.get_adjusted_pulse(self.pulses_iSWAP_cplr[0])
         elif isinstance(gate, gates.TQBGate):
-            pulse = gate.get_adjusted_pulse(self.pulses_2qb_tqb[0])
+            pulse = gate.get_adjusted_pulse(self.pulses_iSWAP_tqb[0])
         elif isinstance(gate, gates.ReadoutGate):
             pulse = gate.get_adjusted_pulse(self.pulses_readout[qubit])
         elif isinstance(gate, gates.CustomGate):
@@ -1333,90 +1333,90 @@ class SequenceToWaveforms:
             self.pulses_2qb[n] = pulse
 
         # two-qubit (coupler) pulses: composite pulses
-        for n, pulse in enumerate(self.pulses_2qb_cplr):
+        for n, pulse in enumerate(self.pulses_iSWAP_cplr):
             if (n>0):
                 break
             # pulses are indexed from 1 in Labber
             _str = '%d-%d' % (n + 1, n + 2)
-            num_pulses = int(config.get('Pulse number, 2QB (Cplr, %s)'%_str))
+            num_pulses = int(config.get('Pulse number, 2QB (iSWAP, Cplr, %s)'%_str))
             list_pulses = []
             list_delays = []
             for i in range(num_pulses):
                 # global parameters
-                pulse = (getattr(pulses, config.get('Pulse type #%d, 2QB (Cplr, %s)'%(i+1, _str))))(complex=False)
+                pulse = (getattr(pulses, config.get('Pulse type #%d, 2QB (iSWAP, Cplr, %s)'%(i+1, _str))))(complex=False)
 
 
-                if config.get('Pulse type #%d, 2QB (Cplr, %s)'%(i+1, _str)) in ['CZ', 'NetZero']:
+                if config.get('Pulse type #%d, 2QB (iSWAP, Cplr, %s)'%(i+1, _str)) in ['CZ', 'NetZero']:
                     # spectra
-                    if config.get('Assume linear dependence  #%d, 2QB (Cplr, %s)'%(i+1, _str), True):
+                    if config.get('Assume linear dependence  #%d, 2QB (iSWAP, Cplr, %s)'%(i+1, _str), True):
                         pulse.qubit = None
                     else:
                         pulse.qubit = self.qubits[n]
-                    pulse.dfdV = config.get('df/dV #%d, 2QB (Cplr, %s)'%(i+1, _str))
+                    pulse.dfdV = config.get('df/dV #%d, 2QB (iSWAP, Cplr, %s)'%(i+1, _str))
                     pulse.negative_amplitude = False
 
-                    pulse.F_Terms = d[config.get('Fourier terms #%d, 2QB (Cplr, %s)'%(i+1, _str))]
-                    pulse.width = config.get('Width #%d, 2QB (Cplr, %s)'%(i+1, _str))
-                    pulse.plateau = config.get('Plateau #%d, 2QB (Cplr, %s)'%(i+1, _str))
+                    pulse.F_Terms = d[config.get('Fourier terms #%d, 2QB (iSWAP, Cplr, %s)'%(i+1, _str))]
+                    pulse.width = config.get('Width #%d, 2QB (iSWAP, Cplr, %s)'%(i+1, _str))
+                    pulse.plateau = config.get('Plateau #%d, 2QB (iSWAP, Cplr, %s)'%(i+1, _str))
 
 
                     # Get Fourier values
-                    if d[config.get('Fourier terms #%d, 2QB (Cplr, %s)'%(i+1, _str))] == 4:
+                    if d[config.get('Fourier terms #%d, 2QB (iSWAP, Cplr, %s)'%(i+1, _str))] == 4:
                         pulse.Lcoeff = np.array([
-                            config.get('L1 #%d, 2QB (Cplr, %s)'%(i+1, _str)),
-                            config.get('L2 #%d, 2QB (Cplr, %s)'%(i+1, _str)),
-                            config.get('L3 #%d, 2QB (Cplr, %s)'%(i+1, _str)),
-                            config.get('L4 #%d, 2QB (Cplr, %s)'%(i+1, _str))
+                            config.get('L1 #%d, 2QB (iSWAP, Cplr, %s)'%(i+1, _str)),
+                            config.get('L2 #%d, 2QB (iSWAP, Cplr, %s)'%(i+1, _str)),
+                            config.get('L3 #%d, 2QB (iSWAP, Cplr, %s)'%(i+1, _str)),
+                            config.get('L4 #%d, 2QB (iSWAP, Cplr, %s)'%(i+1, _str))
                         ])
-                    elif d[config.get('Fourier terms #%d, 2QB (Cplr, %s)'%(i+1, _str))] == 3:
+                    elif d[config.get('Fourier terms #%d, 2QB (iSWAP, Cplr, %s)'%(i+1, _str))] == 3:
                         pulse.Lcoeff = np.array([
-                            config.get('L1 #%d, 2QB (Cplr, %s)'%(i+1, _str)),
-                            config.get('L2 #%d, 2QB (Cplr, %s)'%(i+1, _str)),
-                            config.get('L3 #%d, 2QB (Cplr, %s)'%(i+1, _str))
+                            config.get('L1 #%d, 2QB (iSWAP, Cplr, %s)'%(i+1, _str)),
+                            config.get('L2 #%d, 2QB (iSWAP, Cplr, %s)'%(i+1, _str)),
+                            config.get('L3 #%d, 2QB (iSWAP, Cplr, %s)'%(i+1, _str))
                         ])
-                    elif d[config.get('Fourier terms #%d, 2QB (Cplr, %s)'%(i+1, _str))] == 2:
+                    elif d[config.get('Fourier terms #%d, 2QB (iSWAP, Cplr, %s)'%(i+1, _str))] == 2:
                         pulse.Lcoeff = np.array([
-                            config.get('L1 #%d, 2QB (Cplr, %s)'%(i+1, _str)),
-                            config.get('L2 #%d, 2QB (Cplr, %s)'%(i+1, _str))
+                            config.get('L1 #%d, 2QB (iSWAP, Cplr, %s)'%(i+1, _str)),
+                            config.get('L2 #%d, 2QB (iSWAP, Cplr, %s)'%(i+1, _str))
                         ])
-                    elif d[config.get('Fourier terms #%d, 2QB (Cplr, %s)'%(i+1, _str))] == 1:
-                        pulse.Lcoeff = np.array([config.get('L1 #%d, 2QB (Cplr, %s)'%(i+1, _str))])
+                    elif d[config.get('Fourier terms #%d, 2QB (iSWAP, Cplr, %s)'%(i+1, _str))] == 1:
+                        pulse.Lcoeff = np.array([config.get('L1 #%d, 2QB (iSWAP, Cplr, %s)'%(i+1, _str))])
 
 
-                    pulse.Coupling = config.get('f101-f020 Coupling #%d, 2QB (Cplr, %s)'%(i+1, _str))
-                    pulse.Offset = config.get('f101-f020 initial #%d, 2QB (Cplr, %s)'%(i+1, _str))
-                    pulse.amplitude = config.get('f101-f020 final #%d, 2QB (Cplr, %s)'%(i+1, _str))
+                    pulse.Coupling = config.get('f101-f020 Coupling #%d, 2QB (iSWAP, Cplr, %s)'%(i+1, _str))
+                    pulse.Offset = config.get('f101-f020 initial #%d, 2QB (iSWAP, Cplr, %s)'%(i+1, _str))
+                    pulse.amplitude = config.get('f101-f020 final #%d, 2QB (iSWAP, Cplr, %s)'%(i+1, _str))
 
                     pulse.calculate_cz_waveform()
                 else:
                     # spectra
-                    if config.get('Convert from freq to amp #%d, 2QB (Cplr, %s)'%(i+1, _str), True):
+                    if config.get('Convert from freq to amp #%d, 2QB (iSWAP, Cplr, %s)'%(i+1, _str), True):
                         pulse.qubit = self.qubits[1] #QB2 = CPLR
-                        pulse.init_freq = config.get('Init freq #%d, 2QB (Cplr, %s)'%(i+1, _str))
-                        pulse.final_freq = config.get('Final freq #%d, 2QB (Cplr, %s)'%(i+1, _str))
+                        pulse.init_freq = config.get('Init freq #%d, 2QB (iSWAP, Cplr, %s)'%(i+1, _str))
+                        pulse.final_freq = config.get('Final freq #%d, 2QB (iSWAP, Cplr, %s)'%(i+1, _str))
                     else:
                         pulse.qubit = None
                         pulse.init_freq = None
                         pulse.final_freq = None
                     
-                    pulse.truncation_range = config.get('Truncation range #%d, 2QB (Cplr, %s)'%(i+1, _str))
-                    pulse.start_at_zero = config.get('Start at zero #%d, 2QB (Cplr, %s)'%(i+1, _str))
+                    pulse.truncation_range = config.get('Truncation range #%d, 2QB (iSWAP, Cplr, %s)'%(i+1, _str))
+                    pulse.start_at_zero = config.get('Start at zero #%d, 2QB (iSWAP, Cplr, %s)'%(i+1, _str))
                     # pulse shape
-                    pulse.width = config.get('Width #%d, 2QB (Cplr, %s)'%(i+1, _str))
-                    pulse.plateau = config.get('Plateau #%d, 2QB (Cplr, %s)'%(i+1, _str))
+                    pulse.width = config.get('Width #%d, 2QB (iSWAP, Cplr, %s)'%(i+1, _str))
+                    pulse.plateau = config.get('Plateau #%d, 2QB (iSWAP, Cplr, %s)'%(i+1, _str))
                     # pulse-specific parameters
-                    pulse.amplitude = config.get('Amplitude #%d, 2QB (Cplr, %s)'%(i+1, _str))
+                    pulse.amplitude = config.get('Amplitude #%d, 2QB (iSWAP, Cplr, %s)'%(i+1, _str))
 
                 list_pulses.append(pulse)
 
                 if i > 0:
-                    list_delays.append(config.get('Pulse delay #%d, 2QB (Cplr, %s)'%(i+1, _str)))
+                    list_delays.append(config.get('Pulse delay #%d, 2QB (iSWAP, Cplr, %s)'%(i+1, _str)))
 
             composite_pulse = pulses.CompositePulse(list_pulses = list_pulses, list_delays = list_delays)
             # gates.CZ.new_angles(
             #     config.get('QB1 Phi 2QB #12'), config.get('QB2 Phi 2QB #12'))
 
-            self.pulses_2qb_cplr[n] = composite_pulse
+            self.pulses_iSWAP_cplr[n] = composite_pulse
 
             #     # spectra
             #     if config.get('Assume linear dependence' + s, True):
@@ -1473,91 +1473,91 @@ class SequenceToWaveforms:
 
 
         # two-qubit (tunable qubit) pulses: composite pulses
-        for n, pulse in enumerate(self.pulses_2qb_tqb):
+        for n, pulse in enumerate(self.pulses_iSWAP_tqb):
             if (n>0):
                 break
 
             # pulses are indexed from 1 in Labber
             _str = '%d-%d' % (n + 1, n + 2)
-            num_pulses = int(config.get('Pulse number, 2QB (TQB, %s)'%_str))
+            num_pulses = int(config.get('Pulse number, 2QB (iSWAP, TQB, %s)'%_str))
             list_pulses = []
             list_delays = []
             for i in range(num_pulses):
                 # global parameters
-                pulse = (getattr(pulses, config.get('Pulse type #%d, 2QB (TQB, %s)'%(i+1, _str))))(complex=False)
+                pulse = (getattr(pulses, config.get('Pulse type #%d, 2QB (iSWAP, TQB, %s)'%(i+1, _str))))(complex=False)
 
-                if config.get('Pulse type #%d, 2QB (TQB, %s)'%(i+1, _str)) in ['CZ', 'NetZero']:
+                if config.get('Pulse type #%d, 2QB (iSWAP, TQB, %s)'%(i+1, _str)) in ['CZ', 'NetZero']:
                     # spectra
-                    if config.get('Assume linear dependence  #%d, 2QB (TQB, %s)'%(i+1, _str), True):
+                    if config.get('Assume linear dependence  #%d, 2QB (iSWAP, TQB, %s)'%(i+1, _str), True):
                         pulse.qubit = None
                     else:
                         pulse.qubit = self.qubits[n]
-                    pulse.dfdV = config.get('df/dV #%d, 2QB (TQB, %s)'%(i+1, _str))
+                    pulse.dfdV = config.get('df/dV #%d, 2QB (iSWAP, TQB, %s)'%(i+1, _str))
                     pulse.negative_amplitude = False
 
-                    pulse.F_Terms = d[config.get('Fourier terms #%d, 2QB (TQB, %s)'%(i+1, _str))]
-                    pulse.width = config.get('Width #%d, 2QB (TQB, %s)'%(i+1, _str))
-                    pulse.plateau = config.get('Plateau #%d, 2QB (TQB, %s)'%(i+1, _str))
+                    pulse.F_Terms = d[config.get('Fourier terms #%d, 2QB (iSWAP, TQB, %s)'%(i+1, _str))]
+                    pulse.width = config.get('Width #%d, 2QB (iSWAP, TQB, %s)'%(i+1, _str))
+                    pulse.plateau = config.get('Plateau #%d, 2QB (iSWAP, TQB, %s)'%(i+1, _str))
 
 
                     # Get Fourier values
-                    if d[config.get('Fourier terms #%d, 2QB (TQB, %s)'%(i+1, _str))] == 4:
+                    if d[config.get('Fourier terms #%d, 2QB (iSWAP, TQB, %s)'%(i+1, _str))] == 4:
                         pulse.Lcoeff = np.array([
-                            config.get('L1 #%d, 2QB (Cplr, %s)'%(i+1, _str)),
-                            config.get('L2 #%d, 2QB (Cplr, %s)'%(i+1, _str)),
-                            config.get('L3 #%d, 2QB (Cplr, %s)'%(i+1, _str)),
-                            config.get('L4 #%d, 2QB (Cplr, %s)'%(i+1, _str))
+                            config.get('L1 #%d, 2QB (iSWAP, Cplr, %s)'%(i+1, _str)),
+                            config.get('L2 #%d, 2QB (iSWAP, Cplr, %s)'%(i+1, _str)),
+                            config.get('L3 #%d, 2QB (iSWAP, Cplr, %s)'%(i+1, _str)),
+                            config.get('L4 #%d, 2QB (iSWAP, Cplr, %s)'%(i+1, _str))
                         ])
-                    elif d[config.get('Fourier terms #%d, 2QB (TQB, %s)'%(i+1, _str))] == 3:
+                    elif d[config.get('Fourier terms #%d, 2QB (iSWAP, TQB, %s)'%(i+1, _str))] == 3:
                         pulse.Lcoeff = np.array([
-                            config.get('L1 #%d, 2QB (Cplr, %s)'%(i+1, _str)),
-                            config.get('L2 #%d, 2QB (Cplr, %s)'%(i+1, _str)),
-                            config.get('L3 #%d, 2QB (Cplr, %s)'%(i+1, _str))
+                            config.get('L1 #%d, 2QB (iSWAP, Cplr, %s)'%(i+1, _str)),
+                            config.get('L2 #%d, 2QB (iSWAP, Cplr, %s)'%(i+1, _str)),
+                            config.get('L3 #%d, 2QB (iSWAP, Cplr, %s)'%(i+1, _str))
                         ])
-                    elif d[config.get('Fourier terms #%d, 2QB (TQB, %s)'%(i+1, _str))] == 2:
+                    elif d[config.get('Fourier terms #%d, 2QB (iSWAP, TQB, %s)'%(i+1, _str))] == 2:
                         pulse.Lcoeff = np.array([
-                            config.get('L1 #%d, 2QB (Cplr, %s)'%(i+1, _str)),
-                            config.get('L2 #%d, 2QB (Cplr, %s)'%(i+1, _str))
+                            config.get('L1 #%d, 2QB (iSWAP, Cplr, %s)'%(i+1, _str)),
+                            config.get('L2 #%d, 2QB (iSWAP, Cplr, %s)'%(i+1, _str))
                         ])
-                    elif d[config.get('Fourier terms #%d, 2QB (TQB, %s)'%(i+1, _str))] == 1:
-                        pulse.Lcoeff = np.array([config.get('L1 #%d, 2QB (TQB, %s)'%(i+1, _str))])
+                    elif d[config.get('Fourier terms #%d, 2QB (iSWAP, TQB, %s)'%(i+1, _str))] == 1:
+                        pulse.Lcoeff = np.array([config.get('L1 #%d, 2QB (iSWAP, TQB, %s)'%(i+1, _str))])
 
 
-                    pulse.Coupling = config.get('f101-f200 Coupling #%d, 2QB (TQB, %s)'%(i+1, _str))
-                    pulse.Offset = config.get('f101-f200 initial #%d, 2QB (TQB, %s)'%(i+1, _str))
-                    pulse.amplitude = config.get('f101-f200 final #%d, 2QB (TQB, %s)'%(i+1, _str))
+                    pulse.Coupling = config.get('f101-f200 Coupling #%d, 2QB (iSWAP, TQB, %s)'%(i+1, _str))
+                    pulse.Offset = config.get('f101-f200 initial #%d, 2QB (iSWAP, TQB, %s)'%(i+1, _str))
+                    pulse.amplitude = config.get('f101-f200 final #%d, 2QB (iSWAP, TQB, %s)'%(i+1, _str))
 
                     pulse.calculate_cz_waveform()
                 else:
                     # spectra
-                    if config.get('Convert from freq to amp #%d, 2QB (TQB, %s)'%(i+1, _str), True):
+                    if config.get('Convert from freq to amp #%d, 2QB (iSWAP, TQB, %s)'%(i+1, _str), True):
                         pulse.qubit = self.qubits[2] #QB3 = TQB
-                        pulse.init_freq = config.get('Init freq #%d, 2QB (TQB, %s)'%(i+1, _str))
-                        pulse.final_freq = config.get('Final freq #%d, 2QB (TQB, %s)'%(i+1, _str))
+                        pulse.init_freq = config.get('Init freq #%d, 2QB (iSWAP, TQB, %s)'%(i+1, _str))
+                        pulse.final_freq = config.get('Final freq #%d, 2QB (iSWAP, TQB, %s)'%(i+1, _str))
                     else:
                         pulse.qubit = None
                         pulse.init_freq = None
                         pulse.final_freq = None
                     
-                    pulse.truncation_range = config.get('Truncation range #%d, 2QB (TQB, %s)'%(i+1, _str))
-                    pulse.start_at_zero = config.get('Start at zero #%d, 2QB (TQB, %s)'%(i+1, _str))
+                    pulse.truncation_range = config.get('Truncation range #%d, 2QB (iSWAP, TQB, %s)'%(i+1, _str))
+                    pulse.start_at_zero = config.get('Start at zero #%d, 2QB (iSWAP, TQB, %s)'%(i+1, _str))
                     # pulse shape
-                    pulse.width = config.get('Width #%d, 2QB (TQB, %s)'%(i+1, _str))
-                    pulse.plateau = config.get('Plateau #%d, 2QB (TQB, %s)'%(i+1, _str))
+                    pulse.width = config.get('Width #%d, 2QB (iSWAP, TQB, %s)'%(i+1, _str))
+                    pulse.plateau = config.get('Plateau #%d, 2QB (iSWAP, TQB, %s)'%(i+1, _str))
                     # pulse-specific parameters
-                    pulse.amplitude = config.get('Amplitude #%d, 2QB (TQB, %s)'%(i+1, _str))
+                    pulse.amplitude = config.get('Amplitude #%d, 2QB (iSWAP, TQB, %s)'%(i+1, _str))
 
                 list_pulses.append(pulse)
 
                 if i > 0:
-                    list_delays.append(config.get('Pulse delay #%d, 2QB (TQB, %s)'%(i+1, _str)))
+                    list_delays.append(config.get('Pulse delay #%d, 2QB (iSWAP, TQB, %s)'%(i+1, _str)))
 
             composite_pulse = pulses.CompositePulse(list_pulses = list_pulses, list_delays = list_delays)
 
-            self.pulses_2qb_tqb[n] = composite_pulse
+            self.pulses_iSWAP_tqb[n] = composite_pulse
 
         gates.iSWAP_Cplr.new_angles(
-            config.get('FQB Phi, 2QB (Cplr, 1-2)'), config.get('TQB Phi, 2QB (Cplr, 1-2)'))
+            config.get('FQB Phi, 2QB (iSWAP, Cplr, 1-2)'), config.get('TQB Phi, 2QB (iSWAP, Cplr, 1-2)'))
         # predistortion
         self.perform_predistortion = config.get('Predistort waveforms', False)
         # update all predistorting objects
