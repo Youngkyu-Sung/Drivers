@@ -255,7 +255,7 @@ class ZGate_Cplr_CZ(OneQubitGate):
     def __repr__(self):
         return self.__str__()
 
-class ZGate_TQB_iSWAP(OneQubitGate):
+class ZGate_TQB_CZ(OneQubitGate):
     """Z pulses applied to a tunable qubit, to implement a CZ gate"""
     def __init__(self, name='ZGate_TQB_CZ'):
         # super().__init__(theta=np.pi)
@@ -269,6 +269,7 @@ class ZGate_TQB_iSWAP(OneQubitGate):
         return "ZGate_TQB_CZ"
     def __repr__(self):
         return self.__str__()
+
 class CompositeGate:
     """Multiple gates in one object.
 
