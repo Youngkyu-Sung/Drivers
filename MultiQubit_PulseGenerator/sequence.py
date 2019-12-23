@@ -1353,7 +1353,7 @@ class SequenceToWaveforms:
 
             self.pulses_2qb[n] = pulse
 
-        # two-qubit (coupler) pulses: composite pulses
+        # two-qubit (coupler) pulses: composite pulses applied to both coupler (Cplr) & tuanble qubit (TQB).
         _gates = ['iSWAP', 'CZ']
         _qubits = ['Cplr', 'TQB']
         for _gate in _gates:
@@ -1544,7 +1544,7 @@ class SequenceToWaveforms:
         gates.iSWAP_Cplr.new_angles(
             config.get('FQB Phi, 2QB (iSWAP, Cplr, 1-2)'), config.get('TQB Phi, 2QB (iSWAP, Cplr, 1-2)'))
 
-        gates.iSWAP_CZ.new_angles(
+        gates.CZ_Cplr.new_angles(
             config.get('FQB Phi, 2QB (CZ, Cplr, 1-2)'), config.get('TQB Phi, 2QB (CZ, Cplr, 1-2)'))
 
         # predistortion

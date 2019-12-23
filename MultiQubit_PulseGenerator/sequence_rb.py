@@ -243,7 +243,7 @@ def add_singleQ_based_twoQ_clifford(index, gate_seq_1, gate_seq_2, gate_seq_Cplr
 
     add_singleQ_clifford(index_1, gate_seq_1)
     add_singleQ_clifford(index_2, gate_seq_2)
-    if generator == 'iSWAP_Cplr':
+    if generator in ['iSWAP_Cplr', 'CZ_Cplr']:
         add_singleQ_S1(0, gate_seq_Cplr) # add redundant I gates for a coupler
 
 
@@ -271,6 +271,19 @@ def add_CNOT_like_twoQ_clifford(index, gate_seq_1, gate_seq_2, gate_seq_Cplr = [
         gate_seq_1.append(gates.I)
         gate_seq_2.append(gates.CZ)
         add_singleQ_S1(index_3, gate_seq_1)
+        add_singleQ_S1_Y2p(index_4, gate_seq_2)
+
+    elif generator == 'CZ_Cplr':
+        add_singleQ_clifford(index_1, gate_seq_1)
+        add_singleQ_S1(0, gate_seq_Cplr) # add redundant I gates for a coupler
+        add_singleQ_clifford(index_2, gate_seq_2)
+
+        gate_seq_1.append(gates.I)
+        gate_seq_Cplr.append(gates.CZ_Cplr)
+        gate_seq_2.append(gates.I)
+
+        add_singleQ_S1(index_3, gate_seq_1)
+        add_singleQ_S1(0, gate_seq_Cplr) # add redundant I gates for a coupler
         add_singleQ_S1_Y2p(index_4, gate_seq_2)
 
     elif generator == 'iSWAP_Cplr':
@@ -328,6 +341,11 @@ def add_iSWAP_like_twoQ_clifford(index, gate_seq_1, gate_seq_2, gate_seq_Cplr = 
         add_singleQ_S1_Y2p(index_3, gate_seq_1)
         add_singleQ_S1_X2p(index_4, gate_seq_2)
 
+    elif generator == 'CZ_Cplr':
+        add_singleQ_clifford(index_1, gate_seq_1)
+        add_singleQ_S1(0, gate_seq_Cplr) # add redundant I gates for a coupler
+        add_singleQ_clifford(index_2, gate_seq_2)
+            
     elif generator == 'iSWAP_Cplr':
         add_singleQ_clifford(index_1, gate_seq_1)
         add_singleQ_S1(0, gate_seq_Cplr) # add redundant I gates for a coupler
@@ -638,7 +656,7 @@ class TwoQubit_RB(Sequence):
             qubits_to_benchmark = [int(config['Qubits to Benchmark'][0]) - 1, 
                 int(config['Qubits to Benchmark'][2]) - 1] 
 
-        elif generator == 'iSWAP_Cplr':
+        elif generator in ['iSWAP_Cplr', 'CZ_Cplr']:
             qubits_to_benchmark = [int(config['Qubits to Benchmark (Coupler)'][0]) - 1, 
                 int(config['Qubits to Benchmark (Coupler)'][2]) - 1,
                 int(config['Qubits to Benchmark (Coupler)'][4]) - 1,] 
@@ -690,6 +708,11 @@ class TwoQubit_RB(Sequence):
                         clifford_seq_1.append(g[2])
                         clifford_seq_Cplr.append(g[1])
                         clifford_seq_2.append(g[0])
+                    elif interleaved_gate == 'CZ_Cplr':
+                        gate = gates.CZ_Cplr
+                        clifford_seq_1.append(g[2])
+                        clifford_seq_Cplr.append(g[1])
+                        clifford_seq_2.append(g[0])
                     elif interleaved_gate == 'I':
                         # TBA: adjust the duration of I gates?
                         # log.info('Qubits to benchmark: ' + str(qubits_to_benchmark))
@@ -705,8 +728,6 @@ class TwoQubit_RB(Sequence):
             # remove redundant Identity gates for cliffordSeq1
             index_identity_clifford = [] # find where Identity gates are
             for p in range(len(cliffordSeq1)):
-                # if (cliffordSeq1[p] == gates.I and cliffordSeq2[p] == gates.I):
-                #     index_identity_clifford.append(p)
 
                 if not cliffordSeqCplr: # If clifford_seq_Cplr is an empty list,
                     if (cliffordSeq1[p] == gates.I and cliffordSeq2[p] == gates.I):
@@ -723,7 +744,7 @@ class TwoQubit_RB(Sequence):
             log.info('*** clifford sequence *** ')
             log.info("QB1 clifford gate sequence: " + str([cliffords.Gate_to_strGate(g) for g in cliffordSeq1]))
             log.info("QB2 clifford gate sequence: " + str([cliffords.Gate_to_strGate(g) for g in cliffordSeq2]))
-            if generator == 'iSWAP_Cplr':
+            if generator in ['iSWAP_Cplr', 'CZ_Cplr']:
                 log.info("Coupler clifford gate sequence: " + str([cliffords.Gate_to_strGate(g) for g in cliffordSeqCplr]))
             log.info("=================================================")
 
@@ -744,18 +765,6 @@ class TwoQubit_RB(Sequence):
             recoverySeq2 = [m for n, m in enumerate(recoverySeq2) if n not in index_identity_recovery]
             if recoverySeqCplr:
                 recoverySeqCplr = [m for n, m in enumerate(recoverySeqCplr) if n not in index_identity_recovery]
-
-            # # get recovery gate seq
-            # (recoverySeq1, recoverySeq2) = self.get_recovery_gate(
-            #     cliffordSeq1, cliffordSeq2, config)
-
-            # Remove redundant identity gates in recovery gate seq
-            # index_identity_recovery = [] # find where Identity gates are
-            # for p in range(len(recoverySeq1)):
-            #     if (recoverySeq1[p] == gates.I and recoverySeq2[p] == gates.I):
-            #         index_identity_recovery.append(p)
-            # recoverySeq1 = [m for n, m in enumerate(recoverySeq1) if n not in index_identity_recovery]
-            # recoverySeq2 = [m for n, m in enumerate(recoverySeq2) if n not in index_identity_recovery]
 
             # Construct the total gate sequence.
             gateSeq1 = []
@@ -817,9 +826,7 @@ class TwoQubit_RB(Sequence):
                 multi_gate_seq.append(gateSeq1)
                 # for i in range(self.n_qubit - qubits_to_benchmark[1]):
                 #     multi_gate_seq.append([None] * len(gate_seq_1))
-            elif (generator == 'iSWAP_Cplr'):
-                # for i in range(qubits_to_benchmark[0] - 1):
-                #     multi_gate_seq.append([None] * len(gate_seq_1))
+            elif (generator in ['iSWAP_Cplr', 'CZ_Cplr']):
                 multi_gate_seq.append(gateSeq2)
                 multi_gate_seq.append(gateSeqCplr)
                 multi_gate_seq.append(gateSeq1)
@@ -849,10 +856,13 @@ class TwoQubit_RB(Sequence):
                         self.add_gate(qubit = qubits_to_benchmark, gate = gate_seq)
                 elif generator == 'iSWAP_Cplr':
                     if gate_seq[1] == gates.iSWAP_Cplr:
-                        # self.add_gate(qubit=[0, 1, 2], gate=gate_seq[1])
                         self.add_gate(qubit=qubits_to_benchmark, gate=gate_seq[1])
                     else:
-                        # self.add_gate(qubit=[0, 1, 2], gate=gate_seq)
+                        self.add_gate(qubit=qubits_to_benchmark, gate=gate_seq)
+                elif generator == 'CZ_Cplr':
+                    if gate_seq[1] == gates.CZ_Cplr:
+                        self.add_gate(qubit=qubits_to_benchmark, gate=gate_seq[1])
+                    else:
                         self.add_gate(qubit=qubits_to_benchmark, gate=gate_seq)
 
             self.prev_gate_seq = multi_gate_seq
@@ -1035,6 +1045,8 @@ class TwoQubit_RB(Sequence):
                         filepath_lookup_table = os.path.join(path_currentdir, 'recovery_rb_table.pickle')
                     elif (generator == 'iSWAP_Cplr'):
                         filepath_lookup_table = os.path.join(path_currentdir, 'recovery_rb_table_iSWAP_Cplr.pickle')
+                    elif (generator == 'CZ_Cplr'):
+                        filepath_lookup_table = os.path.join(path_currentdir, 'recovery_rb_table_CZ_Cplr.pickle')
                 if filepath_lookup_table != self.filepath_lookup_table:
                     log.info("Load Look-up table.")
                     self.filepath_lookup_table = filepath_lookup_table
@@ -1049,7 +1061,7 @@ class TwoQubit_RB(Sequence):
                         for str_Gate in seq2:
                             cheapest_recovery_seq_2.append(cliffords.strGate_to_Gate(str_Gate))
 
-                        if (generator == 'iSWAP_Cplr'):
+                        if generator in ['iSWAP_Cplr', 'CZ_Cplr']:
                             seqCplr = self.dict_lookup_table['recovery_gates_Cplr'][index]
                             for str_Gate in seqCplr:
                                 cheapest_recovery_seq_Cplr.append(cliffords.strGate_to_Gate(str_Gate))
@@ -1057,7 +1069,7 @@ class TwoQubit_RB(Sequence):
                         log.info("=== FOUND THE CHEAPEST RECOVERY GATE IN THE LOOK-UP TABLE. ===")
                         log.info("QB1 recovery gate sequence: " + str(seq1))
                         log.info("QB2 recovery gate sequence: " + str(seq2))
-                        if generator == 'iSWAP_Cplr':
+                        if generator in ['iSWAP_Cplr', 'CZ_Cplr']:
                             log.info("Coupler recovery gate sequence: " + str (seqCplr))
                         log.info("=================================================")
                         return (cheapest_recovery_seq_1, cheapest_recovery_seq_2, cheapest_recovery_seq_Cplr)
@@ -1096,6 +1108,11 @@ class TwoQubit_RB(Sequence):
                                 N_1QB_gate += 2
                         elif generator == 'iSWAP_Cplr':
                             if (recovery_seq_Cplr[j] == gates.iSWAP_Cplr):
+                                N_2QB_gate += 1
+                            else:
+                                N_1QB_gate += 2
+                        elif generator == 'CZ_Cplr':
+                            if (recovery_seq_Cplr[j] == gates.CZ_Cplr):
                                 N_2QB_gate += 1
                             else:
                                 N_1QB_gate += 2

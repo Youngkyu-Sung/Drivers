@@ -136,6 +136,8 @@ def Gate_to_strGate(_Gate):
         str_Gate = 'CZ'
     elif (_Gate == gates.iSWAP_Cplr):
         str_Gate = 'iSWAP_Cplr'
+    elif (_Gate == gates.CZ_Cplr):
+        str_Gate = 'CZ_Cplr'
 
     return str_Gate
 
@@ -184,6 +186,8 @@ def strGate_to_Gate(_strGate):
         g = gates.CZ
     elif (_strGate == 'iSWAP_Cplr'):
         g = gates.iSWAP_Cplr
+    elif (_strGate == 'CZ_Cplr'):
+        g = gates.CZ_Cplr
 
     return g
 
@@ -228,6 +232,11 @@ def generate_2QB_Cliffords(_index, **kwargs):
         elif (generator == 'iSWAP_Cplr'):
             if (seq_Cplr[i] == gates.iSWAP_Cplr):
                 _mGate = np.kron(dict_m2QBGate['iSWAP'], _mGate)
+                m2QBClifford = mul(_mGate, m2QBClifford)
+                continue
+        elif (generator == 'CZ_Cplr'):
+            if (seq_Cplr[i] == gates.CZ_Cplr):
+                _mGate = np.kron(dict_m2QBGate['CZ'], _mGate)
                 m2QBClifford = mul(_mGate, m2QBClifford)
                 continue
         # else: # 1QB gates
@@ -392,6 +401,11 @@ if __name__ == "__main__":
                                 N_2QB_gate += 1
                             else:
                                 N_1QB_gate += 2
+                        elif generator == 'CZ_Cplr':
+                            if (seq_Cplr[k] == gates.CZ_Cplr):
+                                N_2QB_gate += 1
+                            else:
+                                N_1QB_gate += 2
                         if (seq_QB1[k] == gates.I):
                             N_I_gate += 1
                         if (seq_QB2[k] == gates.I):
@@ -429,13 +443,13 @@ if __name__ == "__main__":
                 if generator == 'CZ':
                     if (seq_recovery_QB1[p] == gates.I and seq_recovery_QB2[p] == gates.I):
                         index_identity.append(p)
-                elif generator == 'iSWAP_Cplr':
+                elif generator in ['iSWAP_Cplr', 'CZ_Cplr']:
                     if (seq_recovery_QB1[p] == gates.I and seq_recovery_QB2[p] == gates.I and seq_recovery_Cplr[p] == gates.I):
                         index_identity.append(p)
 
             seq_recovery_QB1 = [m for n, m in enumerate(seq_recovery_QB1) if n not in index_identity]
             seq_recovery_QB2 = [m for n, m in enumerate(seq_recovery_QB2) if n not in index_identity]
-            if generator == 'iSWAP_Cplr':
+            if generator in ['iSWAP_Cplr', 'CZ_Cplr']:
                 seq_recovery_Cplr = [m for n, m in enumerate(seq_recovery_Cplr) if n not in index_identity]
 
             # seq_recovery_QB1 = [m for n, m in enumerate(seq_recovery_QB1) if n not in index_identity]
