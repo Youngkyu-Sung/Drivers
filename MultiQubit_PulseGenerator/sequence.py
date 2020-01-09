@@ -1289,7 +1289,6 @@ class SequenceToWaveforms:
 
             self.pulses_1qb_z[n] = pulse
 
-        log.info('hello')
         # two-qubit pulses
         for n, pulse in enumerate(self.pulses_2qb):
             # pulses are indexed from 1 in Labber
@@ -1363,6 +1362,9 @@ class SequenceToWaveforms:
         # two-qubit (coupler) pulses: composite pulses applied to both coupler (Cplr) & tuanble qubit (TQB).
         _gates = ['iSWAP', 'CZ']
         _qubits = ['Cplr', 'TQB']
+
+        # for _pulses in [self.pulses_iSWAP_cplr, self.pulses_CZ_cplr, self.pulses_iSWAP_tqb, self.pulses_CZ_tqb]:
+
         for _gate in _gates:
             for _qubit in _qubits:
                 if (_gate == 'iSWAP' and _qubit == 'Cplr'):
@@ -1376,7 +1378,6 @@ class SequenceToWaveforms:
                 else:
                     raise ValueError('invalid %s, %s'%(_gate, _qubit))
 
-                log.info('hello')
                 for n, pulse in enumerate(_pulses):
                     if (n>0):
                         break
@@ -1402,6 +1403,7 @@ class SequenceToWaveforms:
                             pulse.F_Terms = d[config.get('Fourier terms #%d, 2QB (%s, %s, %s)'%(i+1, _gate, _qubit, _str))]
                             pulse.width = config.get('Width #%d, 2QB (%s, %s, %s)'%(i+1, _gate, _qubit, _str))
                             pulse.plateau = config.get('Plateau #%d, 2QB (%s, %s, %s)'%(i+1, _gate, _qubit, _str))
+                            # pulse.frequency = config.get('Frequency #%d, 2QB (%s, %s, %s)'%(i+1, _gate, _qubit, _str))
 
 
                             # Get Fourier values
@@ -1430,8 +1432,6 @@ class SequenceToWaveforms:
                             pulse.Coupling = config.get('Coupling #%d, 2QB (%s, %s, %s)'%(i+1, _gate, _qubit, _str))
                             pulse.Offset = config.get('Initial freq. detuning #%d, 2QB (%s, %s, %s)'%(i+1, _gate, _qubit, _str))
                             pulse.amplitude = config.get('Final freq. detuning #%d, 2QB (%s, %s, %s)'%(i+1, _gate, _qubit, _str))
-                            log.info(pulse.Coupling)
-                            log.info(_gate +', ' + _qubit + ', ' + _str)
                             pulse.calculate_cz_waveform()
                         else:
                             # spectra
@@ -1446,12 +1446,12 @@ class SequenceToWaveforms:
                             
                             pulse.truncation_range = config.get('Truncation range #%d, 2QB (%s, %s, %s)'%(i+1, _gate, _qubit, _str))
                             pulse.start_at_zero = config.get('Start at zero #%d, 2QB (%s, %s, %s)'%(i+1, _gate, _qubit, _str))
-                            # pulse shape
-                            pulse.width = config.get('Width #%d, 2QB (%s, %s, %s)'%(i+1, _gate, _qubit, _str))
-                            pulse.plateau = config.get('Plateau #%d, 2QB (%s, %s, %s)'%(i+1, _gate, _qubit, _str))
                             # pulse-specific parameters
                             pulse.amplitude = config.get('Amplitude #%d, 2QB (%s, %s, %s)'%(i+1, _gate, _qubit, _str))
-
+                            pulse.width = config.get('Width #%d, 2QB (%s, %s, %s)'%(i+1, _gate, _qubit, _str))
+                            pulse.plateau = config.get('Plateau #%d, 2QB (%s, %s, %s)'%(i+1, _gate, _qubit, _str))
+                            pulse.frequency = config.get('Frequency #%d, 2QB (%s, %s, %s)'%(i+1, _gate, _qubit, _str))
+                            pulse.phase = config.get('Phase #%d, 2QB (%s, %s, %s)'%(i+1, _gate, _qubit, _str))
                         list_pulses.append(pulse)
 
                         if i > 0:

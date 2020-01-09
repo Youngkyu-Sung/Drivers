@@ -170,6 +170,10 @@ class ExponentialPredistortion:
         self.tau3 = 0
         self.A4 = 0
         self.tau4 = 0
+        self.A5 = 0
+        self.tau5 = 0
+        self.A6 = 0
+        self.tau6 = 0
         self.dt = 1
         self.n = int(waveform_number)
 
@@ -192,6 +196,11 @@ class ExponentialPredistortion:
         self.tau3 = config.get('Predistort Z{} - tau3'.format(m))
         self.A4 = config.get('Predistort Z{} - A4'.format(m))
         self.tau4 = config.get('Predistort Z{} - tau4'.format(m))
+
+        self.A5 = config.get('Predistort Z{} - A5'.format(m))
+        self.tau5 = config.get('Predistort Z{} - tau5'.format(m))
+        self.A6 = config.get('Predistort Z{} - A6'.format(m))
+        self.tau6 = config.get('Predistort Z{} - tau6'.format(m))
 
         self.dt = 1 / config.get('Sample rate')
 
@@ -225,7 +234,11 @@ class ExponentialPredistortion:
              (1j * self.A3 * omega * self.tau3) /
              (1j * omega * self.tau3 + 1) +
              (1j * self.A4 * omega * self.tau4) /
-             (1j * omega * self.tau4 + 1))
+             (1j * omega * self.tau4 + 1) +
+             (1j * self.A5 * omega * self.tau5) /
+             (1j * omega * self.tau5 + 1) +
+             (1j * self.A6 * omega * self.tau6) /
+             (1j * omega * self.tau6 + 1))
 
         Yc = Y / H
 

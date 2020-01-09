@@ -177,7 +177,10 @@ class Gaussian(Pulse):
         if self.qubit is None:
             pass
         else:
-            values = self.qubit.df_to_dV(df)
+            final_V = 1
+            init_V = 0
+            values = (values-init_V)/(final_V-init_V)*(self.final_freq-self.init_freq) + self.init_freq
+            values = self.qubit.f_to_V(values)
             
         if self.negative_amplitude is True:
             values = -values
@@ -231,7 +234,10 @@ class Square(Pulse):
         if self.qubit is None:
             values = values * self.amplitude
         else:
-            values = self.qubit.df_to_dV(df)
+            final_V = 1
+            init_V = 0
+            values = (values-init_V)/(final_V-init_V)*(self.final_freq-self.init_freq) + self.init_freq
+            values = self.qubit.f_to_V(values)
 
         if self.negative_amplitude is True:
             values = -values
@@ -265,11 +271,7 @@ class Cosine(Pulse):
         else:
             final_V = 1
             init_V = 0
-            log.info('final_V: ' + str(final_V) + ', init_V: ' + str(init_V))
-            log.info('values')
-            log.info(values)
             values = (values-init_V)/(final_V-init_V)*(self.final_freq-self.init_freq) + self.init_freq
-            log.info(values)
             values = self.qubit.f_to_V(values)
             
         if self.negative_amplitude is True:
@@ -441,27 +443,37 @@ class CompositePulse():
                 t_center = t0 + (_pulse.total_duration() - self.total_duration())*0.5
 
             y = _pulse.calculate_envelope(t_center, t)
+            phase = _pulse.phase
+            omega = 2 * np.pi * _pulse.frequency
+            if _pulse.frequency > 0:
+                y = y*np.cos(omega * t + phase/180.0*np.pi)
             # Make sure the waveform is zero outside the pulse
             y[t < (t_center - _pulse.total_duration() / 2)] = 0
             y[t > (t_center + _pulse.total_duration() / 2)] = 0
 
-            if _pulse.use_drag and _pulse.complex:
-                beta = _pulse.drag_coefficient / (t[1] - t[0])
-                y = y + 1j * beta * np.gradient(y)
-                y = y * np.exp(1j * 2 * np.pi * _pulse.drag_detuning *
-                               (t - t_center + _pulse.total_duration() / 2))
+            # if _pulse.use_drag and _pulse.complex:
+            #     beta = _pulse.drag_coefficient / (t[1] - t[0])
+            #     y = y + 1j * beta * np.gradient(y)
+            #     y = y * np.exp(1j * 2 * np.pi * _pulse.drag_detuning *
+            #                    (t - t_center + _pulse.total_duration() / 2))
 
-            if _pulse.complex:
-                # Apply phase and SSB
-                phase = _pulse.phase
-                # single-sideband mixing, get frequency
-                omega = 2 * np.pi * _pulse.frequency
-                # apply SSBM transform
-                data_i = (y.real * np.cos(omega * t - phase) +
-                          -y.imag * np.cos(omega * t - phase + +np.pi / 2))
-                data_q = (y.real * np.sin(omega * t - phase) +
-                          -y.imag * np.sin(omega * t - phase + +np.pi / 2))
-                y = data_i + 1j * data_q
+            # if _pulse.complex:
+            #     # Apply phase and SSB
+            #     phase = _pulse.phase
+            #     # single-sideband mixing, get frequency
+            #     omega = 2 * np.pi * _pulse.frequency
+            #     # apply SSBM transform
+            #     data_i = (y.real * np.cos(omega * t - phase) +
+            #               -y.imag * np.cos(omega * t - phase + +np.pi / 2))
+            #     data_q = (y.real * np.sin(omega * t - phase) +
+            #               -y.imag * np.sin(omega * t - phase + +np.pi / 2))
+            #     y = data_i + 1j * data_q
+            # else:
+            #     phase = _pulse.phase
+            #     omega = 2 * np.pi * _pulse.frequency
+            #     y = np.cos(omega * t + phase)
+            #     # pass
+
 
             _waveform += y
         return _waveform

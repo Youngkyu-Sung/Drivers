@@ -72,7 +72,6 @@ class Crosstalk(object):
         # store new path
         self.matrix_path = path
         self.compensation_matrix = np.matrix(np.loadtxt(path))
-        # TODO(dan): load crosstalk data
 
     def compensate(self, waveforms):
         """Compensate crosstalk on Z-control waveforms.
