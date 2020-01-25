@@ -11,6 +11,11 @@ import qubits
 import readout
 import tomography
 
+import dill as pickle
+import os
+path_currentdir  = os.path.dirname(os.path.realpath(__file__)) # curret directory
+
+
 # Allow logging to Labber's instrument log
 log = logging.getLogger('LabberDriver')
 
@@ -1362,9 +1367,6 @@ class SequenceToWaveforms:
         # two-qubit (coupler) pulses: composite pulses applied to both coupler (Cplr) & tuanble qubit (TQB).
         _gates = ['iSWAP', 'CZ']
         _qubits = ['Cplr', 'TQB']
-
-        # for _pulses in [self.pulses_iSWAP_cplr, self.pulses_CZ_cplr, self.pulses_iSWAP_tqb, self.pulses_CZ_tqb]:
-
         for _gate in _gates:
             for _qubit in _qubits:
                 if (_gate == 'iSWAP' and _qubit == 'Cplr'):
@@ -1388,8 +1390,11 @@ class SequenceToWaveforms:
                     list_delays = []
                     for i in range(num_pulses):
                         # global parameters
-                        pulse = (getattr(pulses, config.get('Pulse type #%d, 2QB (%s, %s, %s)'%(i+1, _gate, _qubit, _str))))(complex=False)
-
+                        pulse_type = config.get('Pulse type #%d, 2QB (%s, %s, %s)'%(i+1, _gate, _qubit, _str))
+                        if pulse_type == 'Parametric Gate':
+                            pulse = getattr(pulses, 'Cosine')(complex=False)
+                        else:
+                            pulse = getattr(pulses, pulse_type)(complex=False)
 
                         if config.get('Pulse type #%d, 2QB (%s, %s, %s)'%(i+1, _gate, _qubit, _str)) in ['CZ', 'NetZero']:
                             # spectra
@@ -1435,7 +1440,7 @@ class SequenceToWaveforms:
                             pulse.calculate_cz_waveform()
                         else:
                             # spectra
-                            if config.get('Convert from freq to amp #%d, 2QB (%s, %s, %s)'%(i+1, _gate, _qubit, _str), True):
+                            if config.get('Convert from freq to amp #%d, 2QB (%s, %s, %s)'%(i+1, _gate, _qubit, _str), False):
                                 pulse.qubit = self.qubits[1] #QB2 = CPLR
                                 pulse.init_freq = config.get('Init freq #%d, 2QB (%s, %s, %s)'%(i+1, _gate, _qubit, _str))
                                 pulse.final_freq = config.get('Final freq #%d, 2QB (%s, %s, %s)'%(i+1, _gate, _qubit, _str))
@@ -1443,7 +1448,33 @@ class SequenceToWaveforms:
                                 pulse.qubit = None
                                 pulse.init_freq = None
                                 pulse.final_freq = None
+                            pulse.transduce_pulse = config.get('Transduce Pulse #%d, 2QB (%s, %s, %s)'%(i+1, _gate, _qubit, _str), False)
+                            pulse.transduce_file_path = config.get('File Path of Transduce Function #%d, 2QB (%s, %s, %s)'%(i+1, _gate, _qubit, _str),"")
+                            if len(pulse.transduce_file_path) == 0:
+                                pulse.transduce_file_path = os.path.join(path_currentdir, 'pulse_transduce_func.pickle')
                             
+                            if (pulse.transduce_pulse == True):
+                                amp_offset = config.get('Amplitude Offset #%d, 2QB (%s, %s, %s)'%(i+1, _gate, _qubit, _str), 0)
+                                swap_amplitude = config.get('Parametric Driving Amplitude #%d, 2QB (%s, %s, %s)'%(i+1, _gate, _qubit, _str), 0)
+                                data = pickle.load(open(pulse.transduce_file_path, 'rb'))
+                                # remove nan data
+                                ind_nan = np.argwhere(np.isnan(data['list_swap_freq']))
+                                data['cplr_amp'] = np.delete(data['cplr_amp'], ind_nan)
+                                data['list_swap_freq'] = np.delete(data['list_swap_freq'], ind_nan)
+                                swap_freq_offset =  np.interp(amp_offset, xp = data['cplr_amp'], fp = data['list_swap_freq'])
+                                x_range = np.linspace(-1,1,1001)
+                                log.info('amp_offset: ' + str(amp_offset))
+                                log.info('data[cplr_amp]: ' + str(data['cplr_amp']))
+                                log.info('data[list_swap_freq]: ' + str(data['list_swap_freq']))
+                                log.info('swap_freq_offset: ' + str(swap_freq_offset))
+
+                                y_range = np.interp(np.linspace(-swap_amplitude, swap_amplitude, 1001), data['list_swap_freq']-swap_freq_offset, data['cplr_amp']-amp_offset)
+
+                                log.info('x_range: ' + str(x_range))
+
+                                log.info('y_range: ' + str(y_range))
+                                pulse.transduce_func = lambda x: np.interp(x, xp = x_range, fp =  y_range)
+                                
                             pulse.truncation_range = config.get('Truncation range #%d, 2QB (%s, %s, %s)'%(i+1, _gate, _qubit, _str))
                             pulse.start_at_zero = config.get('Start at zero #%d, 2QB (%s, %s, %s)'%(i+1, _gate, _qubit, _str))
                             # pulse-specific parameters

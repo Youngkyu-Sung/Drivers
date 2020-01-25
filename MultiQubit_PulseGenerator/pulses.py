@@ -4,6 +4,10 @@ import logging
 import copy
 log = logging.getLogger('LabberDriver')
 
+
+import os
+path_currentdir  = os.path.dirname(os.path.realpath(__file__)) # curret directory
+
 # TODO Private methods and variables
 
 
@@ -58,6 +62,9 @@ class Pulse:
         self.negative_amplitude = False
         self.init_freq = 6e9
         self.final_freq = 4e9
+
+        self.transduce_pulse = False
+        self.transduce_func = lambda x: x
 
 
     def total_duration(self):
@@ -129,8 +136,6 @@ class Pulse:
             data_q = (y.real * np.sin(omega * t - phase) +
                       -y.imag * np.sin(omega * t - phase + +np.pi / 2))
             y = data_i + 1j * data_q
-
-
 
         return y
 
@@ -416,7 +421,7 @@ class CompositePulse():
             else:
                 _duration = max(_duration, _pulse.total_duration())
             # log.info(_duration, _pulse.total_duration, self.list_delays[i-1])
-        log.info('total duration: ' + str(_duration))
+        # log.info('total duration: ' + str(_duration))
             # log.info('pulse_duration: ' + str(_pulse.total_duration()))
             # log.info('delay: ' + str(self.list_delays[i-1]))
         return _duration
@@ -451,6 +456,8 @@ class CompositePulse():
             y[t < (t_center - _pulse.total_duration() / 2)] = 0
             y[t > (t_center + _pulse.total_duration() / 2)] = 0
 
+            if _pulse.transduce_pulse:
+                y = _pulse.transduce_func(y)
             # if _pulse.use_drag and _pulse.complex:
             #     beta = _pulse.drag_coefficient / (t[1] - t[0])
             #     y = y + 1j * beta * np.gradient(y)
