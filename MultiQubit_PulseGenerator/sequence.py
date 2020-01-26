@@ -530,6 +530,7 @@ class SequenceToWaveforms:
 
         # define pulses
         self.pulses_1qb_xy = [None for n in range(self.n_qubit)]
+        self.pulses_1qb_xy_12 = [None for n in range(self.n_qubit)]
         self.pulses_1qb_z = [None for n in range(self.n_qubit)]
         self.pulses_2qb = [None for n in range(self.n_qubit - 1)]
         self.pulses_readout = [None for n in range(self.n_qubit)]
@@ -720,6 +721,8 @@ class SequenceToWaveforms:
         # Get the corresponding pulse for other gates
         elif isinstance(gate, gates.SingleQubitXYRotation):
             pulse = gate.get_adjusted_pulse(self.pulses_1qb_xy[qubit])
+        elif isinstance(gate, gates.SingleQubitXYRotation_12):
+            pulse = gate.get_adjusted_pulse(self.pulses_1qb_xy_12[qubit])
         elif isinstance(gate, gates.SingleQubitZRotation):
             pulse = gate.get_adjusted_pulse(self.pulses_1qb_z[qubit])
         elif isinstance(gate, gates.IdentityGate):
@@ -1111,7 +1114,8 @@ class SequenceToWaveforms:
                     if self.compensate_crosstalk:
                         crosstalk = self._crosstalk.compensation_matrix[:,
                                                                         qubit]
-                elif isinstance(gate_obj, gates.SingleQubitXYRotation):
+                elif isinstance(gate_obj, 
+                    (gates.SingleQubitXYRotation, gates.SingleQubitXYRotation_12)):
                     waveform = self._wave_xy[qubit]
                     delay = self.wave_xy_delays[qubit]
                 elif isinstance(gate_obj, gates.ReadoutGate):
@@ -1276,6 +1280,34 @@ class SequenceToWaveforms:
             pulse.drag_detuning = config.get('DRAG frequency detuning #%d' % m)
 
             self.pulses_1qb_xy[n] = pulse
+
+        # single-qubit pulses XY (1-2)
+        for n, pulse in enumerate(self.pulses_1qb_xy_12):
+            m = n + 1  # pulses are indexed from 1 in Labber
+            pulse = (getattr(pulses, config.get('Pulse type (1-2)'))(complex=True))
+            # global parameters
+            pulse.truncation_range = config.get('Truncation range (1-2)')
+            pulse.start_at_zero = config.get('Start at zero (1-2)')
+            pulse.use_drag = config.get('Use DRAG (1-2)')
+            # pulse shape
+            if config.get('Uniform pulse shape (1-2)'):
+                pulse.width = config.get('Width (1-2)')
+                pulse.plateau = config.get('Plateau (1-2)')
+            else:
+                pulse.width = config.get('Width #%d (1-2)' % m)
+                pulse.plateau = config.get('Plateau #%d (1-2)' % m)
+
+            if config.get('Uniform amplitude (1-2)'):
+                pulse.amplitude = config.get('Amplitude (1-2)')
+            else:
+                pulse.amplitude = config.get('Amplitude #%d (1-2)' % m)
+
+            # pulse-specific parameters
+            pulse.frequency = config.get('Frequency #%d (1-2)' % m)
+            pulse.drag_coefficient = config.get('DRAG scaling #%d (1-2)' % m)
+            pulse.drag_detuning = config.get('DRAG frequency detuning #%d (1-2)' % m)
+
+            self.pulses_1qb_xy_12[n] = pulse
 
         # single-qubit pulses Z
         for n, pulse in enumerate(self.pulses_1qb_z):

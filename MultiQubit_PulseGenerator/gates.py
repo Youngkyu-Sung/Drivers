@@ -75,6 +75,48 @@ class SingleQubitXYRotation(OneQubitGate):
         return True
 
 
+class SingleQubitXYRotation_12(OneQubitGate):
+    """Single qubit rotations around the XY axes for (1-2) transition.
+
+    Angles defined as in https://en.wikipedia.org/wiki/Bloch_sphere.
+
+    Parameters
+    ----------
+    phi : float
+        Rotation axis.
+    theta : float
+        Roation angle.
+
+    """
+
+    def __init__(self, phi, theta, name=None):
+        self.phi = phi
+        self.theta = theta
+        self.name = name
+
+    def get_adjusted_pulse(self, pulse):
+        pulse = copy(pulse)
+        pulse.phase = self.phi
+        # pi pulse correspond to the full amplitude
+        pulse.amplitude *= self.theta / np.pi
+        return pulse
+
+    def __str__(self):
+        if self.name is None:
+            return "XYPhi={:+.6f}theta={:+.6f}".format(self.phi, self.theta)
+        else:
+            return self.name
+
+    def __eq__(self, other):
+        threshold = 1e-10
+        if not isinstance(other, SingleQubitXYRotation_12):
+            return False
+        if np.abs(self.phi - other.phi) > threshold:
+            return False
+        if np.abs(self.theta - other.theta) > threshold:
+            return False
+        return True
+
 class SingleQubitZRotation(OneQubitGate):
     """Single qubit rotation around the Z axis.
 
@@ -475,6 +517,18 @@ Yp = SingleQubitXYRotation(phi=np.pi / 2, theta=np.pi, name='Yp')
 Ym = SingleQubitXYRotation(phi=np.pi / 2, theta=-np.pi, name='Ym')
 Y2m = SingleQubitXYRotation(phi=np.pi / 2, theta=-np.pi / 2, name='Y2m')
 Y2p = SingleQubitXYRotation(phi=np.pi / 2, theta=np.pi / 2, name='Y2p')
+
+# X gates (1-2)
+Xp_12 = SingleQubitXYRotation_12(phi=0, theta=np.pi, name='Xp_12')
+Xm_12 = SingleQubitXYRotation_12(phi=0, theta=-np.pi, name='Xm_12')
+X2p_12 = SingleQubitXYRotation_12(phi=0, theta=np.pi / 2, name='X2p_12')
+X2m_12 = SingleQubitXYRotation_12(phi=0, theta=-np.pi / 2, name='X2m_12')
+
+# Y gates (1-2)
+Yp_12 = SingleQubitXYRotation_12(phi=np.pi / 2, theta=np.pi, name='Yp_12')
+Ym_12 = SingleQubitXYRotation_12(phi=np.pi / 2, theta=-np.pi, name='Ym_12')
+Y2m_12 = SingleQubitXYRotation_12(phi=np.pi / 2, theta=-np.pi / 2, name='Y2m_12')
+Y2p_12 = SingleQubitXYRotation_12(phi=np.pi / 2, theta=np.pi / 2, name='Y2p_12')
 
 # Z gates
 Zp = SingleQubitZRotation(np.pi, name='Zp')
