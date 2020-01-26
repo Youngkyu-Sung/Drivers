@@ -411,7 +411,6 @@ class CompositePulse():
     def __init__(self, *args, **kwargs):
         self.list_pulses = kwargs.get('list_pulses', []) # list of Pulse() objects 
         self.list_delays = kwargs.get('list_delays', [])
-
     def total_duration(self):
         _duration = 0
         for i in range(len(self.list_pulses)):
@@ -438,8 +437,9 @@ class CompositePulse():
     #         _envelope+= y
     #     return _envelope
 
-    def calculate_waveform(self, t0, t):
+    def calculate_waveform(self, t0, t):#, _recursive = False):
         _waveform = 0
+
         for i in range(len(self.list_pulses)):
             _pulse = self.list_pulses[i]
             if i > 0:
@@ -481,8 +481,31 @@ class CompositePulse():
             #     y = np.cos(omega * t + phase)
             #     # pass
 
-
             _waveform += y
         return _waveform
+    # def calculate_envelope(self, t0, t):
+    #     return (self.slepian.calculate_envelope(t0-self.total_duration()/4, t) -
+    #             self.slepian.calculate_envelope(t0+self.total_duration()/4, t))
+    #     return _waveform
+
+
+class NetZero_CompositePulse():
+    def __init__(self, composite_pulse, *args, **kwargs):
+        # super().__init__()
+        self.composite_pulse = composite_pulse
+        # self.composite_pulse.width /= 2
+        # self.composite_pulse.plateau /= 2
+
+    def total_duration(self):
+        return 2*self.composite_pulse.total_duration()
+
+    # def calculate_waveform(self):
+    #     # self.composite_pulse = CompositePulse()
+    #     # self.composite_pulse.__dict__ = copy.copy(self.__dict__)
+    #     self.composite_pulse.calculate_waveform()
+
+    def calculate_waveform(self, t0, t):
+        return (self.composite_pulse.calculate_waveform(t0-self.total_duration()/4, t) -
+                self.composite_pulse.calculate_waveform(t0+self.total_duration()/4, t))
 if __name__ == '__main__':
     pass
