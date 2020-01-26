@@ -18,8 +18,8 @@ log = logging.getLogger('LabberDriver')
 SEQUENCES = {'Rabi': Rabi,
              'CP/CPMG': CPMG,
              'Pulse train': PulseTrain,
-             '1-QB-RB': SingleQubit_RB,
-             '2-QB-RB': TwoQubit_RB,
+             '1-QB Randomized Benchmarking': SingleQubit_RB,
+             '2-QB Randomized Benchmarking': TwoQubit_RB,
              'Spin-locking': SpinLocking,
              'Readout training': ReadoutTraining,
              'Custom': type(None)}

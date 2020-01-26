@@ -320,8 +320,8 @@ if __name__ == "__main__":
     # ----- THIS IS FOR GENERATING RECOVERY CLIFFORD LOOK-UP TABLE ------
     # -------------------------------------------------------------------
 
-    # Native 2QB Gate ('CZ' or 'iSWAP_Cplr' or 'CZ_Cplr')
-    generator = 'CZ_Cplr'
+    # Native 2QB Gate ('CZ' or 'iSWAP_Cplr')
+    generator = 'iSWAP_Cplr'
 
     # Start with ground state
     psi_00 = np.matrix('1;0;0;0')
@@ -337,7 +337,6 @@ if __name__ == "__main__":
     list_recovery_gates_Cplr = []
     cnt = 0
 
-    print('generator : %s'%(generator))
     # Apply 11520 different 2QB cliffords and get the corresponding stabilizer states
     for i in range(N_2QBcliffords):
         if (i/N_2QBcliffords > cnt):
@@ -371,8 +370,6 @@ if __name__ == "__main__":
                 seq_QB1 = []
                 seq_QB2 = []
                 seq_Cplr = []
-
-                sequence_rb.add_twoQ_clifford(j, seq_QB1, seq_QB2, gate_seq_Cplr = seq_Cplr, generator = generator)
                 # sequence_rb.add_twoQ_clifford(j, seq_QB1, seq_QB2)
                 # print(dot(recovery_gate, final_psi_00))
                 # exit()
@@ -479,7 +476,7 @@ if __name__ == "__main__":
             list_recovery_gates_Cplr.append(seq_recovery_Cplr)
             print('The cheapest recovery clifford gate (QB1): ' + str(seq_recovery_QB1))
             print('The cheapest recovery clifford gate (QB2): ' + str(seq_recovery_QB2))
-            if ((generator == 'iSWAP_Cplr') or (generator == 'CZ_Cplr')):
+            if (generator == 'iSWAP_Cplr'):
                 print('The cheapest recovery clifford gate (Coupler): ' + str(seq_recovery_Cplr))
             print('\n')
 
@@ -503,9 +500,6 @@ if __name__ == "__main__":
     elif generator == 'iSWAP_Cplr':
         dict_result['recovery_gates_Cplr'] = list_recovery_gates_Cplr
         saveData('recovery_rb_table_iSWAP_Cplr.pickle', dict_result)
-    elif generator == 'CZ_Cplr':
-        dict_result['recovery_gates_Cplr'] = list_recovery_gates_Cplr
-        saveData('recovery_rb_table_CZ_Cplr.pickle', dict_result)
     # load the results.
     # dict_result =loadData('recovery_rb_table.dill')
     # print(dict_result['psi_stabilizer'])

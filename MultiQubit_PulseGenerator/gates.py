@@ -169,8 +169,7 @@ class CPHASE(TwoQubitGate):
 
 class ReadoutGate(OneQubitGate):
     """Readouts the qubit state."""
-    def __str__(self):
-        return 'Readout'
+
 
 class CustomGate(BaseGate):
     """A gate using a given :obj:`Pulse`.
@@ -220,7 +219,6 @@ class ZGate_Cplr_iSWAP(OneQubitGate):
 
     def __str__(self):
         return "ZGate_Cplr_iSWAP"
-
     def __repr__(self):
         return self.__str__()
 
@@ -438,7 +436,7 @@ class CZ_Cplr_with_1qb_phases(CompositeGate):
     """
 
     def __init__(self, phi1, phi2):
-        super().__init__(n_qubit=3, name = 'CZ_Cplr')
+        super().__init__(n_qubit=3, name = 'iSWAP_Cplr')
         self.add_gate([IdentityGate(), ZGate_Cplr_CZ(), ZGate_TQB_CZ()])
         self.add_gate([VirtualZGate(phi1), IdentityGate(), VirtualZGate(phi2)])
 
