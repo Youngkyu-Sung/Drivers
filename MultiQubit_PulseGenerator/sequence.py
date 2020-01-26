@@ -32,7 +32,6 @@ class GateOnQubit:
         self.gate = gate
         self.qubit = qubit
         self.pulse = pulse
-
         if pulse is None:
             self.duration = 0
         else:
@@ -99,7 +98,7 @@ class Step:
                 qubit):
             raise ValueError(
                 """Number of qubits in the gate must equal the number of qubit
-                indices given""")
+                indices given. gate.number_of_qubits() = %d, len(qubit) = %d"""%(gate.number_of_qubits(),len(qubit)))
 
         if gate.number_of_qubits() == 1 and not isinstance(qubit, int):
             raise ValueError("Provide qubit as int for gates with one qubit")
@@ -222,7 +221,6 @@ class Sequence:
             self._process_tomography.add_pulses(self)
 
         self.generate_sequence(config)
-
         if self.perform_state_tomography:
             self._state_tomography.add_pulses(self)
 
@@ -345,6 +343,7 @@ class Sequence:
                 raise ValueError(
                     "Length of gate list must equal length of qubit list.")
 
+            # log.info('step_add_gate, q: '+ str())
             for q, g in zip(qubit, gate):
                 step.add_gate(q, g)
         else:
@@ -589,14 +588,16 @@ class SequenceToWaveforms:
         self.sequence = sequence
         self.sequence_list = sequence.sequence_list
         # log.info('Start of get_waveforms. Len sequence list: {}'.format(len(self.sequence_list)))
-        # log.info('Point 1: Sequence_list[3].gates = {}'.format(self.sequence_list[3].gates))
+        # log.info('Point 1: Sequence_list = {}'.format(self.sequence_list))
 
         if not self.simultaneous_pulses:
             self._seperate_gates()
         # log.info('Point 2: Sequence_list[6].gates = {}'.format(self.sequence_list[6].gates))
+        # log.info('Point 2: Sequence_list = {}'.format(self.sequence_list))
 
         self._explode_composite_gates()
-        # log.info('Point 3: Sequence_list[6].gates = {}'.format(self.sequence_list[6].gates))
+        # log.info('Point 3: Sequence_list[1].gates = {}'.format(self.sequence_list[1].gates))
+        # log.info('Point 3: Sequence_list = {}'.format(self.sequence_list))
 
         self._add_pulses_and_durations()
         # log.info('Point 4: Sequence_list[6].gates = {}'.format(self.sequence_list[6].gates))
@@ -605,7 +606,7 @@ class SequenceToWaveforms:
         # log.info('Point 5: Sequence_list[6].gates = {}'.format(self.sequence_list[6].gates))
 
         self._init_waveforms()
-        # log.info('Point 6: Sequence_list[6].gates = {}'.format(self.sequence_list[6].gates))
+        # log.info('Point 6: Sequence_list = {}'.format(self.sequence_list))
 
 
         if self.align_to_end:
@@ -649,7 +650,7 @@ class SequenceToWaveforms:
         waveforms['readout_trig'] = self.readout_trig
         waveforms['readout_iq'] = self.readout_iq
 
-        # log.info('returning z waveforms in get_waveforms. Max is {}'.format(np.max(waveforms['z'])))
+        log.info('returning z waveforms in get_waveforms. Max is {}'.format(np.max(waveforms['z'])))
         return waveforms
 
     def _seperate_gates(self):
@@ -770,7 +771,7 @@ class SequenceToWaveforms:
             while i < len(step.gates):
                 gate = step.gates[i]
                 if isinstance(gate.gate, gates.CompositeGate):
-                    # # log.info('In exploded composite, handling composite gate {} at step {}'.format(gate, n))
+                    # log.info('In exploded composite, handling composite gate {} at step {}'.format(gate, n))
                     for m, g in enumerate(gate.gate.sequence):
                         new_gate = [x.gate for x in g.gates]
                         # Single gates shouldn't be lists
@@ -793,12 +794,14 @@ class SequenceToWaveforms:
                         # Single qubit shouldn't be lists
                         if len(new_qubit) == 1:
                             new_qubit = new_qubit[0]
-                        # # log.info('In explode composite; modifying {} by adding gate {} at index {}'.format(gate, new_gate, n+m))
+                        # log.info('In explode composite; modifying {} by adding gate {} at index {}'.format(gate, new_gate, n+m))
+                        # log.info('before adding new-qubit(' + str(new_qubit) + ') new-gate (' + str(new_gate) + '): ' + str(self.sequence_list))
                         self.sequence.add_gate(
-                            new_qubit, new_gate, index=n + m)
+                            copy.copy(new_qubit), copy.copy(new_gate), index=n + m)
+                        # log.info('after: ' + str(self.sequence_list))
 
                     del step.gates[i]
-                    # # log.info('In composite gates, removing step {}', i)
+                    # log.info('In composite gates, removing step {}'.format(i))
 
                     continue
                 i = i + 1
@@ -808,14 +811,15 @@ class SequenceToWaveforms:
         i = 0
         while i < len(self.sequence_list):
             step = self.sequence_list[i]
+            # log.info(str(step.gates))
             if len(step.gates) == 0:
+                # log.info('In composite gates, removing step {}'.format(i))
                 del self.sequence_list[i]
-                # log.info('In composite gates, removing step {}', i)
                 continue
             i = i + 1
 
         # for i, step in enumerate(self.sequence_list):
-            # log.info('At end of explode, step {} is {}'.format(i, step.gates))
+        #     log.info('At end of explode, step {} is {}'.format(i, step.gates))
 
     def _perform_virtual_z(self):
         """Shifts the phase of pulses subsequent to virtual z gates."""
@@ -1061,9 +1065,11 @@ class SequenceToWaveforms:
             # log.info('Generating gates {}'.format(step.gates))
             for gate in step.gates:
                 qubit = gate.qubit
+                # log.info('-- qubit: ' + str(qubit))
                 if isinstance(qubit, list):
                     qubit = qubit[0]
                 gate_obj = gate.gate
+                # log.info('-- gate_obj: ' + str(gate_obj))
 
                 if isinstance(gate_obj,
                               (gates.IdentityGate, gates.VirtualZGate)):
@@ -1189,6 +1195,7 @@ class SequenceToWaveforms:
                     elif step.align == 'right':
                         t0 = middle + (max_duration - gate.duration) / 2
                     waveform[indices] += gate.pulse.calculate_waveform(t0, t)
+                    # log.info('gate_obj: ' + str(gate_obj))
 
     def set_parameters(self, config={}):
         """Set base parameters using config from from Labber driver.
@@ -1463,16 +1470,16 @@ class SequenceToWaveforms:
                                 data['list_swap_freq'] = np.delete(data['list_swap_freq'], ind_nan)
                                 swap_freq_offset =  np.interp(amp_offset, xp = data['cplr_amp'], fp = data['list_swap_freq'])
                                 x_range = np.linspace(-1,1,1001)
-                                log.info('amp_offset: ' + str(amp_offset))
-                                log.info('data[cplr_amp]: ' + str(data['cplr_amp']))
-                                log.info('data[list_swap_freq]: ' + str(data['list_swap_freq']))
-                                log.info('swap_freq_offset: ' + str(swap_freq_offset))
+                                # log.info('amp_offset: ' + str(amp_offset))
+                                # log.info('data[cplr_amp]: ' + str(data['cplr_amp']))
+                                # log.info('data[list_swap_freq]: ' + str(data['list_swap_freq']))
+                                # log.info('swap_freq_offset: ' + str(swap_freq_offset))
 
                                 y_range = np.interp(np.linspace(-swap_amplitude, swap_amplitude, 1001), data['list_swap_freq']-swap_freq_offset, data['cplr_amp']-amp_offset)
 
-                                log.info('x_range: ' + str(x_range))
+                                # log.info('x_range: ' + str(x_range))
 
-                                log.info('y_range: ' + str(y_range))
+                                # log.info('y_range: ' + str(y_range))
                                 pulse.transduce_func = lambda x: np.interp(x, xp = x_range, fp =  y_range)
                                 
                             pulse.truncation_range = config.get('Truncation range #%d, 2QB (%s, %s, %s)'%(i+1, _gate, _qubit, _str))
@@ -1488,10 +1495,14 @@ class SequenceToWaveforms:
                         if i > 0:
                             list_delays.append(config.get('Pulse delay #%d, 2QB (%s, %s, %s)'%(i+1, _gate, _qubit, _str)))
 
-                    composite_pulse = pulses.CompositePulse(list_pulses = list_pulses, list_delays = list_delays)
-                    # gates.CZ.new_angles(
-                    #     config.get('QB1 Phi 2QB #12'), config.get('QB2 Phi 2QB #12'))
-
+                    # composite_pulse = pulses.CompositePulse(list_pulses = list_pulses, list_delays = list_delays)
+                    make_net_zero = bool(config.get('Make Net-Zero, 2QB (%s, %s, %s)'%(_gate, _qubit, _str), False))
+                    if (make_net_zero == True):
+                        composite_pulse = pulses.NetZero_CompositePulse(pulses.CompositePulse(list_pulses = list_pulses, list_delays = list_delays))
+                    else:
+                        composite_pulse = pulses.CompositePulse(list_pulses = list_pulses, list_delays = list_delays)
+                    gates.CZ.new_angles(
+                        config.get('QB1 Phi 2QB #12'), config.get('QB2 Phi 2QB #12'))
                     _pulses[n] = composite_pulse
 
 
