@@ -51,7 +51,7 @@ def add_singleQ_forXEB(index, gate_seq):
     elif index == 1:
         gate_seq.append(gates.Y2p)
     elif index == 2:
-        gate_seq.append(gates.XY2p)
+        gate_seq.append(gates.W2p)
     else:
         raise ValueError(
             'index is out of range. it should be smaller than 2 and greater'

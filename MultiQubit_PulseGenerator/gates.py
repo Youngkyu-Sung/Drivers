@@ -518,8 +518,8 @@ Ym = SingleQubitXYRotation(phi=np.pi / 2, theta=-np.pi, name='Ym')
 Y2m = SingleQubitXYRotation(phi=np.pi / 2, theta=-np.pi / 2, name='Y2m')
 Y2p = SingleQubitXYRotation(phi=np.pi / 2, theta=np.pi / 2, name='Y2p')
 
-# XY gates (for cross-entropy benchmarking)
-XY2p = SingleQubitXYRotation(phi= np.pi / 4, theta = np.pi / 2, name='XY2p')
+# (X+Y)/2 gates (for cross-entropy benchmarking)
+W2p = SingleQubitXYRotation(phi= np.pi / 4, theta = np.pi / 2, name='W2p')
 
 
 
