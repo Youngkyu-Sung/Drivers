@@ -43,7 +43,11 @@ def CheckIdentity(matrix):
         return False
 
 def add_singleQ_forXEB(index, gate_seq):
-    """Add single qubit gate for cross-entropy benchmarking (3)."""
+    """
+        Add single qubit gate for cross-entropy benchmarking (3).
+        the single-qubit gates are chosen from X/2 (pi/2 rotation around the X axis), Y/2 (pi/2 rotation around the Y axis) and (X + Y)/2 (pi/2 rotation around an axis pi/4 away from the X on the equator of the Bloch sphere).
+    """
+
     length_before = len(gate_seq)
     # Paulis
     if index == 0:
