@@ -42,6 +42,21 @@ def CheckIdentity(matrix):
     else:
         return False
 
+def add_singleQ_forXEB(index, gate_seq):
+    """Add single qubit gate for cross-entropy benchmarking (3)."""
+    length_before = len(gate_seq)
+    # Paulis
+    if index == 0:
+        gate_seq.append(gates.X2p)
+    elif index == 1:
+        gate_seq.append(gates.Y2p)
+    elif index == 2:
+        gate_seq.append(gates.XY2p)
+    else:
+        raise ValueError(
+            'index is out of range. it should be smaller than 2 and greater'
+            ' or equal to 0: ', str(index))
+
 def add_singleQ_clifford(index, gate_seq, pad_with_I=True):
     """Add single qubit clifford (24)."""
     length_before = len(gate_seq)
@@ -132,7 +147,6 @@ def add_singleQ_clifford(index, gate_seq, pad_with_I=True):
         for i in range(3-(length_after-length_before)):
             gate_seq.append(gates.I)
 
-
 def add_twoQ_clifford(index, gate_seq_1, gate_seq_2, gate_seq_Cplr = [], generator = 'CZ'):
     """Add single qubit clifford (11520 = 576 + 5184 + 5184 + 576)."""
     if (index < 0):
@@ -153,7 +167,6 @@ def add_twoQ_clifford(index, gate_seq_1, gate_seq_2, gate_seq_Cplr = [], generat
             'greater or equal to 0: ', str(index))
     pass
 
-
 def add_singleQ_S1(index, gate_seq):
     """Add single qubit clifford from S1.
 
@@ -172,7 +185,6 @@ def add_singleQ_S1(index, gate_seq):
         gate_seq.append(gates.Y2m)
         gate_seq.append(gates.I)  # auxiliary
 
-
 def add_singleQ_S1_X2p(index, gate_seq):
     """Add single qubit clifford from S1_X2p.
 
@@ -190,7 +202,6 @@ def add_singleQ_S1_X2p(index, gate_seq):
         gate_seq.append(gates.Y2m)
         gate_seq.append(gates.I)  # auxiliary
         gate_seq.append(gates.I)  # auxiliary
-
 
 def add_singleQ_S1_Y2p(index, gate_seq):
     """Add single qubit clifford from S1_Y2p.
@@ -245,7 +256,6 @@ def add_singleQ_based_twoQ_clifford(index, gate_seq_1, gate_seq_2, gate_seq_Cplr
     add_singleQ_clifford(index_2, gate_seq_2)
     if generator in ['iSWAP_Cplr', 'CZ_Cplr']:
         add_singleQ_S1(0, gate_seq_Cplr) # add redundant I gates for a coupler
-
 
 def add_CNOT_like_twoQ_clifford(index, gate_seq_1, gate_seq_2, gate_seq_Cplr = [], generator = 'CZ'):
     """Add CNOT like two Qubit Clifford.
@@ -307,9 +317,6 @@ def add_CNOT_like_twoQ_clifford(index, gate_seq_1, gate_seq_2, gate_seq_Cplr = [
         add_singleQ_S1(0, gate_seq_Cplr) # add redundant I gates for a coupler
         add_singleQ_S1_Z2p(index_4, gate_seq_2)
         
-
-
-
 def add_iSWAP_like_twoQ_clifford(index, gate_seq_1, gate_seq_2, gate_seq_Cplr = [], generator = 'CZ'):
     """Add iSWAP like two Qubit Clifford.
 
@@ -374,7 +381,6 @@ def add_iSWAP_like_twoQ_clifford(index, gate_seq_1, gate_seq_2, gate_seq_Cplr = 
         add_singleQ_S1(index_3, gate_seq_1)
         add_singleQ_S1(0, gate_seq_Cplr) # add redundant I gates for a coupler
         add_singleQ_S1(index_4, gate_seq_2)
-
 
 def add_SWAP_like_twoQ_clifford(index, gate_seq_1, gate_seq_2, gate_seq_Cplr = [], generator = 'CZ'):
     """Add SWAP like two Qubit Clifford.
@@ -652,11 +658,10 @@ class SingleQubit_RB(Sequence):
                 str(qubit_state))
         return recovery_gate
 
-
 class TwoQubit_RB(Sequence):
     """Two qubit randomized benchmarking."""
 
-    prev_randomize = np.inf  # store the previous value
+    prev_seed = np.inf  # store the previous value
     prev_N_cliffords = np.inf  # store the previous value
     prev_interleave = np.inf  # store the previous value
     prev_interleaved_gate = np.inf  # store the previous value
@@ -693,7 +698,7 @@ class TwoQubit_RB(Sequence):
         # Number of Cliffords to generate
         # N_cliffords = int(config['Number of Cliffords'])
         N_cliffords = int(config.get('Number of Cliffords', 1))
-        randomize = config.get('Randomize', 0)
+        rnd_seed = config.get('Random Seed', 0)
         interleave = config.get('Interleave 2-QB Gate', False)
         multi_seq = config.get('Output multiple sequences', False)
         write_seq = config.get('Write sequence as txt file', False)
@@ -708,7 +713,7 @@ class TwoQubit_RB(Sequence):
                 int(config['Qubits to Benchmark (Coupler)'][2]) - 1,
                 int(config['Qubits to Benchmark (Coupler)'][4]) - 1,] 
 
-        rnd.seed(randomize)
+        rnd.seed(rnd_seed)
         if interleave is True:
             interleaved_gate = config['Interleaved 2-QB Gate']
         else:
@@ -716,14 +721,14 @@ class TwoQubit_RB(Sequence):
 
         # generate new randomized clifford gates only if configuration changes
         if (self.prev_sequence != sequence or
-                self.prev_randomize != randomize or
+                self.prev_rnd_seed != rnd_seed or
                 self.prev_N_cliffords != N_cliffords or
                 self.prev_interleave != interleave or
                 self.prev_generator != generator or
                 multi_seq or
                 self.prev_interleaved_gate != interleaved_gate):
 
-            self.prev_randomize = randomize
+            self.prev_rnd_seed = rnd_seed
             self.prev_N_cliffords = N_cliffords
             self.prev_interleave = interleave
             self.prev_sequence = sequence
@@ -830,6 +835,8 @@ class TwoQubit_RB(Sequence):
             if (gateSeq1 == [] and gateSeq2 == []):
                 gateSeq1.append(gates.I)
                 gateSeq2.append(gates.I)
+                if generator in ['iSWAP_Cplr', 'CZ_Cplr']:
+                    gateSeqCplr.append(gates.I)
 
             # test the recovery gate
             psi_gnd = np.matrix('1; 0; 0; 0') # ground state |00>
@@ -839,7 +846,7 @@ class TwoQubit_RB(Sequence):
                 directory = os.path.join(path_currentdir,'2QB_RBseq')
                 if not os.path.exists(directory):
                     os.makedirs(directory)
-                filename = datetime.now().strftime('%Y-%m-%d %H-%M-%S-f')[:-3] + '_N_cliffords=%d_seed=%d.txt'%(N_cliffords,randomize)
+                filename = datetime.now().strftime('%Y-%m-%d %H-%M-%S-f')[:-3] + '_N_cliffords=%d_rnd_seed=%d.txt'%(N_cliffords,rnd_seed)
                 # filename = datetime.now().strftime('%Y-%m-%d %H-%M-%S-%f')[:-3] + '_N_cliffords=%d_seed=%d.txt'%(N_cliffords,randomize)
                 filepath = os.path.join(directory,filename)
                 log.info('make file: ' + filepath)
@@ -971,6 +978,8 @@ class TwoQubit_RB(Sequence):
         """
         twoQ_gate = np.matrix(
             [[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]])
+        log.info('gate_seq_1: ' + str(gate_seq_1))
+        log.info('gate_seq_Cplr: ' + str(gate_seq_Cplr))
         for i in range(len(gate_seq_1)):
             gate_1 = np.matrix([[1, 0], [0, 1]])
             gate_2 = np.matrix([[1, 0], [0, 1]])
@@ -1240,6 +1249,135 @@ class TwoQubit_RB(Sequence):
 
         return (recovery_seq_1, recovery_seq_2, recovery_seq_Cplr)
 
+class TwoQubit_XEB(Sequence):
+    """Two qubit randomized benchmarking."""
+    prev_rnd_seed = np.inf  # store the previous value
+    prev_N_cycles = np.inf  # store the previous value
+    prev_sequence = ''
+    prev_gate_seq = []
 
+    def generate_sequence(self, config):
+        """
+        Generate sequence by adding gates/pulses to waveforms.
+
+        Parameters
+        ----------
+        config: dict
+            configuration
+
+        Returns
+        -------
+        """
+
+        # get parameters
+
+        sequence = config['Sequence']
+        rnd_seed = config.get('Random Seed', 0)
+        N_cycles = int(config.get('Number of Cycles', 1))
+        multi_seq = config.get('Output multiple sequences', False)
+        write_seq = config.get('Write sequence as txt file', False)
+        generator = config.get('Native 2-QB gate', 'CZ_Cplr')
+
+        if generator == 'CZ':
+            qubits_to_benchmark = [int(config['Qubits to Benchmark'][0]) - 1, 
+                int(config['Qubits to Benchmark'][2]) - 1] 
+
+        elif generator in ['iSWAP_Cplr', 'CZ_Cplr']:
+            qubits_to_benchmark = [int(config['Qubits to Benchmark (Coupler)'][0]) - 1, 
+                int(config['Qubits to Benchmark (Coupler)'][2]) - 1,
+                int(config['Qubits to Benchmark (Coupler)'][4]) - 1,] 
+
+
+        rnd.seed(rnd_seed)
+
+        # generate new randomized clifford gates only if configuration changes
+        if (self.prev_sequence != sequence or
+                self.prev_rnd_seed != rnd_seed or
+                self.prev_N_cycles != N_cycles or
+                self.prev_generator != generator or
+                multi_seq or
+                self.prev_interleaved_gate != interleaved_gate):
+
+            self.prev_rnd_seed = rnd_seed
+            self.prev_N_cycles = N_cycles
+            self.prev_sequence = sequence
+            self.prev_generator = generator
+
+            multi_gate_seq = []
+
+            # Generate 2QB XEB sequence
+            gateSeq1 = []
+            gateSeq2 = []
+            gateSeqCplr = []
+            for j in range(N_cycles):
+
+                # add random single qubit gates 
+                rndnum1 = rnd.randint(0, 2)
+                rndnum2 = rnd.randint(0, 2)
+                add_singleQ_forXEB(rndnum1, gateSeq1)
+                add_singleQ_forXEB(rndnum2, gateSeq2)
+                if generator in ['iSWAP_Cplr', 'CZ_Cplr']:
+                    gateSeqCplr.append(gates.I)
+
+                # add two qubit gate 
+                if generator == 'CZ':
+                    gateSeq1.append(gates.I)
+                    gateSeq2.append(gates.CZ)
+                elif generator == 'iSWAP_Cplr':
+                    gateSeq1.append(gates.I)
+                    gateSeqCplr.append(gates.iSWAP_Cplr)
+                    gateSeq2.append(gates.I)
+                elif generator == 'CZ_Cplr':
+                    gateSeq1.append(gates.I)
+                    gateSeqCplr.append(gates.CZ_Cplr)
+                    gateSeq2.append(Gates.I)
+
+                
+            if (generator == 'CZ'):
+                multi_gate_seq.append(gateSeq2)
+                multi_gate_seq.append(gateSeq1)
+            elif (generator in ['iSWAP_Cplr', 'CZ_Cplr']):
+                multi_gate_seq.append(gateSeq2)
+                multi_gate_seq.append(gateSeqCplr)
+                multi_gate_seq.append(gateSeq1)
+
+            # transpose list of lists
+            multi_gate_seq = list(map(list, itertools.zip_longest(*multi_gate_seq, fillvalue=gates.I))) # Not to chop
+
+            for gate_seq in multi_gate_seq:
+                if generator == 'CZ':
+                    if gate_seq[0] == gates.CZ:
+                        self.add_gate(qubit = qubits_to_benchmark, gate = gate_seq[0])
+                    else:
+                        self.add_gate(qubit = qubits_to_benchmark, gate = gate_seq)
+                elif generator == 'iSWAP_Cplr':
+                    if gate_seq[1] == gates.iSWAP_Cplr:
+                        self.add_gate(qubit=qubits_to_benchmark, gate=gate_seq[1])
+                    else:
+                        self.add_gate(qubit=qubits_to_benchmark, gate=gate_seq)
+                elif generator == 'CZ_Cplr':
+                    if gate_seq[1] == gates.CZ_Cplr:
+                        self.add_gate(qubit=qubits_to_benchmark, gate=gate_seq[1])
+                    else:
+                        self.add_gate(qubit=qubits_to_benchmark, gate=gate_seq)
+            self.prev_gate_seq = multi_gate_seq
+        
+        else:
+            for gate_seq in self.prev_gate_seq:
+                if generator == 'CZ':
+                    if gate_seq[0] == gates.CZ:
+                        self.add_gate(qubit=qubits_to_benchmark, gate=gate_seq[0])
+                    else:
+                        self.add_gate(qubit=qubits_to_benchmark, gate=gate_seq)
+                elif generator == 'iSWAP_Cplr':
+                    if gate_seq[1] == gates.iSWAP_Cplr:
+                        self.add_gate(qubit=qubits_to_benchmark, gate=gate_seq[1])
+                    else:
+                        self.add_gate(qubit=qubits_to_benchmark, gate=gate_seq)
+                elif generator == 'CZ_Cplr':
+                    if gate_seq[1] == gates.CZ_Cplr:
+                        self.add_gate(qubit=qubits_to_benchmark, gate=gate_seq[1])
+                    else:
+                        self.add_gate(qubit=qubits_to_benchmark, gate=gate_seq)
 if __name__ == '__main__':
     pass
