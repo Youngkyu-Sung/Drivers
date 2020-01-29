@@ -11,7 +11,7 @@ import itertools
 import sequence_rb 
 import gates
 
-
+import qutip as qt
 # list of Paulis in string representation
 list_sSign = ['+','-'] #
 list_sPauli = ['I','X','Y','Z']
@@ -47,6 +47,7 @@ dict_m2QBGate = {'SWAP': np.matrix('1,0,0,0; 0,0,1,0; 0,1,0,0; 0,0,0,1'),
 	'CZ': np.matrix('1,0,0,0; 0,1,0,0; 0,0,1,0; 0,0,0,-1'),
 	'iSWAP': np.matrix('1,0,0,0; 0,0,1j,0; 0,1j,0,0; 0,0,0,1'),
 	'CNOT': np.matrix('1,0,0,0; 0,1,0,0; 0,0,0,1; 0,0,1,0')}
+
 
 # def arb_gate(theta, )
 def generate_XEB_circuit(generator = 'CZ', N_cycles = 10, rnd_seed = 0):
@@ -87,13 +88,6 @@ def generate_XEB_circuit(generator = 'CZ', N_cycles = 10, rnd_seed = 0):
 			gateSeq2.append(Gates.I)
 
 	return gateSeq1, gateSeq2, gateSeqCplr
-
-def _compute_fidelity(p_exp, p_meas, num_states)
-    pp_cross = probs_exp * probs_meas
-    pp_exp = probs_exp**2
-    f_meas = np.mean(num_states * np.sum(pp_cross, axis=1) - 1.0)
-    f_exp = np.mean(num_states * np.sum(pp_exp, axis=1) - 1.0)
-    return float(f_meas / f_exp)
 
 def calculate_XEB_fidelity(p_meas, p_sim, entropy_calc = "linear"):
 		"""
@@ -141,8 +135,38 @@ def calculate_XEB_fidelity(p_meas, p_sim, entropy_calc = "linear"):
 
 # Use the decay of the XEB fidelity as a cost functio. Te parameters of a generic unitary model were optimized to determine a higher-fidelity representation of the unitary. All errors are quoted as Pauli error
 
+def evaluate_rho(rho0, gate_seq_1, gate_seq_2, gate_seq_Cplr = None, generator = 'CZ'):
+	"""
+	Evaluate the final rho
 
-def evaluate_sequence(gate_seq_1, gate_seq_2, gate_seq_Cplr = None, generator = 'CZ'):
+	Parameters
+	----------
+	rho0: np.matrix
+		initial state
+	gate_seq_1: list of class Gate (defined in "gates.py")
+		The gate sequence applied to Qubit "1"
+
+	gate_seq_2: list of class Gate (defined in "gates.py")
+		The gate sequence applied to Qubit "2"
+
+	gate_seq_Cplr: list of class Gate (defined in "gates.py")
+		The gate sequence applied to "Coupler"
+
+	generator: string
+		Native 2QB gate
+
+	Returns
+	-------
+	rho: np.matrix (shape = (4,4))
+		The evaulation result.
+	"""
+	rho0 = Qobj(rho0)
+	for i in range(len(gate_seq_1)):
+		gate = evaluate_gate([gate_seq_1[i]], [gate_seq_2[i]], [gate_seq_Cplr[i]] if (gate_seq_Cplr is not None) else None, generator = generator)
+		print(gate)
+
+	exit()
+def evaluate_gate(gate_seq_1, gate_seq_2, gate_seq_Cplr = None, generator = 'CZ'):
 	"""
 	Evaluate the two qubit gate sequence.
 
@@ -248,26 +272,33 @@ if __name__ == '__main__':
 
 	# generate XEB circuit
 	generator = 'CZ' #native 2QB gate
-	gateSeq1, gateSeq2, gateSeqCplr = generate_XEB_circuit(generator = generator, N_cycles = 10, rnd_seed = 0)
 
-	# print('gateSeq1: {}'.format(gateSeq1) + ', gateSeq2: {}'.format(gateSeq2))
-	print('* Generate XEB circuit')
-	print('gateSeq1 (Length: {}): {}'.format(len(gateSeq1),gateSeq1))
-	print('gateSeq2 (Length: {}): {}'.format(len(gateSeq2),gateSeq2))
-	if gateSeqCplr:
-		print('gateSeqCplr (Length: {}): {}'.format(len(gateSeqCplr),gateSeqCplr))
-	print('\n')
+	num_randomization = 20
+	list_cycles = np.arange(1,50,5)
+	for i, cycles in enumerate(list_cycles):
+		for j in range(num_randomization):
+			# generate XEB circuit
+			gateSeq1, gateSeq2, gateSeqCplr = generate_XEB_circuit(generator = generator, N_cycles = cycles, rnd_seed = j)
 
-	print('* Evaluate the circuit')
-	gate = evaluate_sequence(gateSeq1, gateSeq2, gateSeqCplr, generator = generator)
-	print('corresponding unitary matrix: {}'.format(gate))
-	print('\n')
+			# print('gateSeq1: {}'.format(gateSeq1) + ', gateSeq2: {}'.format(gateSeq2))
+			print('* Generate XEB circuit')
+			print('gateSeq1 (Length: {}): {}'.format(len(gateSeq1),gateSeq1))
+			print('gateSeq2 (Length: {}): {}'.format(len(gateSeq2),gateSeq2))
+			if gateSeqCplr:
+				print('gateSeqCplr (Length: {}): {}'.format(len(gateSeqCplr),gateSeqCplr))
+			print('\n')
 
-	print('* Estimate the final state')
-	psi_init = np.matrix('1; 0; 0; 0') # ground state |00>
-	psi_final = np.matmul(gate, psi_init)
-	rho_final = psi_final * psi_final.H
-	print('rho_final: {}'.format(rho_final))
-	for i in range(2):
-		for j in range(2):
-			print('population of |{}{}>: {}'.format(i, j, np.real(rho_final[i*2+j,i*2+j])))
+			print('* Evaluate the circuit')
+			# gate_ideal = evaluate_gate(gateSeq1, gateSeq2, gateSeqCplr, generator = generator)
+			gate_ideal = evaluate_gate(gateSeq1, gateSeq2, gateSeqCplr, generator = generator)
+			print('corresponding unitary matrix: {}'.format(gate))
+			print('\n')
+			exit()
+			print('* Estimate the final state')
+			psi_init = np.matrix('1; 0; 0; 0') # ground state |00>
+			psi_final = np.matmul(gate, psi_init)
+			rho_final = psi_final * psi_final.H
+			print('rho_final: {}'.format(rho_final))
+			for i in range(2):
+				for j in range(2):
+					print('population of |{}{}>: {}'.format(i, j, np.real(rho_final[i*2+j,i*2+j])))
