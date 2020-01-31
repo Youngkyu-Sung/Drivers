@@ -1299,8 +1299,7 @@ class TwoQubit_XEB(Sequence):
                 self.prev_rnd_seed != rnd_seed or
                 self.prev_N_cycles != N_cycles or
                 self.prev_generator != generator or
-                multi_seq or
-                self.prev_interleaved_gate != interleaved_gate):
+                multi_seq):
 
             self.prev_rnd_seed = rnd_seed
             self.prev_N_cycles = N_cycles
@@ -1366,6 +1365,23 @@ class TwoQubit_XEB(Sequence):
                         self.add_gate(qubit=qubits_to_benchmark, gate=gate_seq)
             self.prev_gate_seq = multi_gate_seq
         
+            if write_seq == True:
+                import os
+                from datetime import datetime
+                directory = os.path.join(path_currentdir,'2QB_XEBseq')
+                if not os.path.exists(directory):
+                    os.makedirs(directory)
+                filename = datetime.now().strftime('%Y-%m-%d %H-%M-%S-f')[:-3] + '_N_cycles=%d_rnd_seed=%d.txt'%(N_cycles,rnd_seed)
+                filepath = os.path.join(directory,filename)
+                log.info('make file: ' + filepath)
+                with open(filepath, "w") as text_file:
+                    print('New Sequence', file=text_file)
+                    if (generator in ['iSWAP_Cplr', 'CZ_Cplr']):
+                        for i in range(len(gateSeq1)):
+                            print("Index: %d, Gate: ["%(i) + cliffords.Gate_to_strGate(gateSeq1[i]) + ", " + cliffords.Gate_to_strGate(gateSeqCplr[i]) + ", " + cliffords.Gate_to_strGate(gateSeq2[i]) +']', file=text_file)
+                    else:
+                        for i in range(len(gateSeq1)):
+                            print("Index: %d, Gate: ["%(i) + cliffords.Gate_to_strGate(gateSeq1[i]) + ", " + cliffords.Gate_to_strGate(gateSeq2[i]) +']', file=text_file)
         else:
             for gate_seq in self.prev_gate_seq:
                 if generator == 'CZ':
