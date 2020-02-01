@@ -139,9 +139,9 @@ class Driver(LabberDriver):
                         config[multi_param] = -1
                         training_type = config['Training type']
                         if training_type == 'Specific qubit':
-                            n_call = 2
+                            n_call = int(config.get('Number of states',2))
                         elif training_type == 'All qubits at once':
-                            n_call = 2
+                            n_call = int(config.get('Number of states',2))
                         elif training_type == 'All combinations':
                             n_call = 2**self.sequence.n_qubit
 

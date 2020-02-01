@@ -494,7 +494,7 @@ class SingleQubit_RB(Sequence):
         multi_seq = config.get('Output multiple sequences', False)
         write_seq = config.get('Write sequence as txt file', False)
 
-        log.info('Assign seed %d' %(randomize))
+        # log.info('Assign seed %d' %(randomize))
         rnd.seed(randomize)
         if interleave is True:
             interleaved_gate = config['Interleaved 1-QB Gate']
@@ -522,7 +522,7 @@ class SingleQubit_RB(Sequence):
 
                 for i in range(N_cliffords):
                     rndnum = rnd.randint(0, 23)
-                    log.info('Random number %d' %(rndnum))
+                    # log.info('Random number %d' %(rndnum))
                     add_singleQ_clifford(rndnum, single_gate_seq,
                                          pad_with_I=False)
                     # If interleave gate,
@@ -546,7 +546,7 @@ class SingleQubit_RB(Sequence):
                         os.makedirs(directory)
                     filename = datetime.now().strftime('%Y-%m-%d %H-%M-%S-f')[:-3] + '_qbNum=%d_N_cliffords=%d_seed=%d.txt'%(n, N_cliffords,randomize)
                     filepath = os.path.join(directory,filename)
-                    log.info('make file: ' + filepath)
+                    # log.info('make file: ' + filepath)
                     with open(filepath, "w") as text_file:
                         print('New Sequence', file=text_file)
                         for i in range(len(single_gate_seq)):

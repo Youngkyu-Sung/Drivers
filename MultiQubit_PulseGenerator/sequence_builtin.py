@@ -145,19 +145,24 @@ class ReadoutTraining(Sequence):
 
         training_type = config['Training type']
         state = int(config['Training, input state'])
-        # currently only supports two states
-        n_state = 2
+        # (01/27/2020) supports three states
+        n_state = 3
 
         if training_type == 'Specific qubit':
             # specific qubit, just add gate
             qubit = int(config['Training, qubit']) - 1
-            if state:
+            if state == 1:
                 self.add_gate(qubit, gates.Xp)
+            elif state == 2:
+                self.add_gate(qubit, gates.Xp_12)
 
         elif training_type == 'All qubits at once':
             # add to all qubits
-            if state:
+            if state == 1:
                 self.add_gate_to_all(gates.Xp)
+            elif state == 2:
+                self.add_gate_to_all(gates.Xp)
+                self.add_gate_to_all(gates.Xp_12)
 
         elif training_type == 'All combinations':
             # get bitstring for current state
@@ -165,6 +170,8 @@ class ReadoutTraining(Sequence):
             bitstring = bitstring[::-1][:self.n_qubit]
             qubit_list = []
             gate_list = []
+            if n_state > 2:
+                raise ValueError('currently only supports two states')
             for n in range(self.n_qubit):
                 if int(bitstring[n]):
                     qubit_list.append(n)
