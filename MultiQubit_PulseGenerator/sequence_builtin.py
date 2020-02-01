@@ -154,6 +154,7 @@ class ReadoutTraining(Sequence):
             if state == 1:
                 self.add_gate(qubit, gates.Xp)
             elif state == 2:
+                self.add_gate(qubit, gates.Xp)
                 self.add_gate(qubit, gates.Xp_12)
 
         elif training_type == 'All qubits at once':
