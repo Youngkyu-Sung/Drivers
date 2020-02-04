@@ -18,37 +18,8 @@ class CustomSequence(Sequence):
     def generate_sequence(self, config):
         """Generate sequence by adding gates/pulses to waveforms."""
         # just add pi-pulses for the number of available qubits
-        # multi_gate_seq = []
-        # multi_gate_seq.append(gates.iSWAP_Cplr)
-        self.add_gate(qubit=0, gate=gates.Y2p)
-        self.add_gate(qubit=1, gate=gates.I)
-        self.add_gate(qubit=2, gate=gates.Y2p)
-        # self.add_gate(qubit=[0,1,2], gate = [gates.Xp, gates.I, gates.Yp])
-        # self.add_gate(qubit=[0,1,2], gate = [gates.Xp, gates.I, gates.Yp])
-        # self.add_gate(qubit=[0,1,2], gate = [gates.Xp, gates.I, gates.Yp])
         self.add_gate(qubit=[0,1,2], gate=gates.CZ_Cplr)
 
-        self.add_gate(qubit=0, gate=gates.Y2p)
-        self.add_gate(qubit=1, gate=gates.I)
-        self.add_gate(qubit=2, gate=gates.Y2p)
-        self.add_gate(qubit=0, gate=gates.I)
-        self.add_gate(qubit=1, gate=gates.I)
-        self.add_gate(qubit=2, gate=gates.Xp)
-        self.add_gate(qubit=0, gate=gates.X2p)
-        self.add_gate(qubit=1, gate=gates.I)
-        self.add_gate(qubit=2, gate=gates.X2m)
-        self.add_gate(qubit=0, gate=gates.Y2m)
-        self.add_gate(qubit=1, gate=gates.I)
-        self.add_gate(qubit=2, gate=gates.Y2m)
-        self.add_gate(qubit=[0,1,2], gate=gates.CZ_Cplr)
-        self.add_gate(qubit=0, gate=gates.Yp)
-        self.add_gate(qubit=1, gate=gates.I)
-        self.add_gate(qubit=2, gate=gates.X2m)
-        self.add_gate(qubit=0, gate=gates.X2p)
-        self.add_gate(qubit=1, gate=gates.I)
-        self.add_gate(qubit=2, gate=gates.Y2m)
-        # self.add_gate(qubit=[0,1,2], gate=gates.CZ_Cplr)
-        # self.add_gate(qubit=[0,1,2], gate=gates.CZ_Cplr)
         # pass
 if __name__ == '__main__':
     pass
