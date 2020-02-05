@@ -476,7 +476,7 @@ def add_SWAP_like_twoQ_clifford(index, gate_seq_1, gate_seq_2, gate_seq_Cplr = [
 class SingleQubit_RB(Sequence):
     """Single qubit randomized benchmarking."""
 
-    prev_randomize = np.inf  # store the previous value
+    prev_rnd_seed = np.inf  # store the previous value
     prev_N_cliffords = np.inf  # store the previous value
     prev_interleave = np.inf  # store the previous value
     prev_interleaved_gate = np.inf  # store the previous value
@@ -489,27 +489,27 @@ class SingleQubit_RB(Sequence):
         sequence = config['Sequence']
         # Number of Cliffords to generate
         N_cliffords = int(config['Number of Cliffords'])
-        randomize = config['Randomize']
+        rnd_seed = config['Random Seed']
         interleave = config['Interleave 1-QB Gate']
         multi_seq = config.get('Output multiple sequences', False)
         write_seq = config.get('Write sequence as txt file', False)
 
-        # log.info('Assign seed %d' %(randomize))
-        rnd.seed(randomize)
+        # log.info('Assign seed %d' %(rnd_seed))
+        rnd.seed(rnd_seed)
         if interleave is True:
             interleaved_gate = config['Interleaved 1-QB Gate']
         else:
             interleaved_gate = np.inf
         # generate new randomized clifford gates only if configuration changes
         if (self.prev_sequence != sequence or
-                self.prev_randomize != randomize or
+                self.prev_rnd_seed != rnd_seed or
                 self.prev_N_cliffords != N_cliffords or
                 self.prev_interleave != interleave or
                 multi_seq or
                 self.prev_interleaved_gate != interleaved_gate or
                 self.prev_n_qubit != self.n_qubit):
 
-            self.prev_randomize = randomize
+            self.prev_rnd_seed = rnd_seed
             self.prev_N_cliffords = N_cliffords
             self.prev_interleave = interleave
             self.prev_sequence = sequence
@@ -544,7 +544,7 @@ class SingleQubit_RB(Sequence):
                     directory = os.path.join(path_currentdir,'1QB_RBseq')
                     if not os.path.exists(directory):
                         os.makedirs(directory)
-                    filename = datetime.now().strftime('%Y-%m-%d %H-%M-%S-f')[:-3] + '_qbNum=%d_N_cliffords=%d_seed=%d.txt'%(n, N_cliffords,randomize)
+                    filename = datetime.now().strftime('%Y-%m-%d %H-%M-%S-f')[:-3] + '_qbNum=%d_N_cliffords=%d_seed=%d.txt'%(n, N_cliffords,rnd_seed)
                     filepath = os.path.join(directory,filename)
                     # log.info('make file: ' + filepath)
                     with open(filepath, "w") as text_file:
