@@ -17,8 +17,8 @@ class CustomSequence(Sequence):
 
     def generate_sequence(self, config):
         """Generate sequence by adding gates/pulses to waveforms."""
-        self.add_gate(qubit=0, gate=gates.Xp)
-        self.add_gate(qubit=1, gate=gates.Zp)
+        # just add pi-pulses for the number of available qubits
+        self.add_gate(qubit=0, gate=gates.W2p)
         # pass
 if __name__ == '__main__':
     pass

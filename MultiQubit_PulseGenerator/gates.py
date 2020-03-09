@@ -74,6 +74,48 @@ class SingleQubitXYRotation(OneQubitGate):
             return False
         return True
 
+# class SingleQubitXYRotation_AUX(OneQubitGate):
+#     """Single qubit rotations around the XY axes.
+
+#     Angles defined as in https://en.wikipedia.org/wiki/Bloch_sphere.
+
+#     Parameters
+#     ----------
+#     phi : float
+#         Rotation axis.
+#     theta : float
+#         Roation angle.
+
+#     """
+
+#     def __init__(self, phi, theta, name=None):
+#         self.phi = phi
+#         self.theta = theta
+#         self.name = name
+
+#     def get_adjusted_pulse(self, pulse):
+#         pulse = copy(pulse)
+#         pulse.phase = self.phi
+#         # pi pulse correspond to the full amplitude
+#         pulse.amplitude *= self.theta / np.pi
+#         return pulse
+
+#     def __str__(self):
+#         if self.name is None:
+#             return "XYPhi={:+.6f}theta={:+.6f}".format(self.phi, self.theta)
+#         else:
+#             return self.name
+
+#     def __eq__(self, other):
+#         threshold = 1e-10
+#         if not isinstance(other, SingleQubitXYRotation_AUX):
+#             return False
+#         if np.abs(self.phi - other.phi) > threshold:
+#             return False
+#         if np.abs(self.theta - other.theta) > threshold:
+#             return False
+#         return True
+
 
 class SingleQubitXYRotation_12(OneQubitGate):
     """Single qubit rotations around the XY axes for (1-2) transition.
@@ -446,8 +488,8 @@ class iSWAP_Cplr_with_1qb_phases(CompositeGate):
 
     def __init__(self, phi1, phi2):
         super().__init__(n_qubit=3, name = 'iSWAP_Cplr')
-        self.add_gate([IdentityGate(), ZGate_Cplr_iSWAP(), ZGate_TQB_iSWAP()])
-        self.add_gate([VirtualZGate(phi1), IdentityGate(), VirtualZGate(phi2)])
+        self.add_gate([IdentityGate(width = 0), ZGate_Cplr_iSWAP(), ZGate_TQB_iSWAP()])
+        self.add_gate([VirtualZGate(phi1), IdentityGate(width = 0), VirtualZGate(phi2)])
 
     def new_angles(self, phi1, phi2):
         """Update the angles of the single qubit rotations.
@@ -481,8 +523,8 @@ class CZ_Cplr_with_1qb_phases(CompositeGate):
 
     def __init__(self, phi1, phi2):
         super().__init__(n_qubit=3, name = 'CZ_Cplr')
-        self.add_gate([IdentityGate(), ZGate_Cplr_CZ(), ZGate_TQB_CZ()])
-        self.add_gate([VirtualZGate(phi1), IdentityGate(), VirtualZGate(phi2)])
+        self.add_gate([IdentityGate(width = 0), ZGate_Cplr_CZ(), ZGate_TQB_CZ()])
+        self.add_gate([VirtualZGate(phi1), IdentityGate(width = 0), VirtualZGate(phi2)])
 
     def new_angles(self, phi1, phi2):
         """Update the angles of the single qubit rotations.
@@ -512,11 +554,18 @@ Xm = SingleQubitXYRotation(phi=0, theta=-np.pi, name='Xm')
 X2p = SingleQubitXYRotation(phi=0, theta=np.pi / 2, name='X2p')
 X2m = SingleQubitXYRotation(phi=0, theta=-np.pi / 2, name='X2m')
 
+
+# X2p_aux = SingleQubitXYRotation_AUX(phi=0, theta=np.pi / 2, name='X2p') #auxillary
+# X2m_aux = SingleQubitXYRotation_AUX(phi=0, theta=-np.pi / 2, name='X2m') #auxillary
+
 # Y gates
 Yp = SingleQubitXYRotation(phi=np.pi / 2, theta=np.pi, name='Yp')
 Ym = SingleQubitXYRotation(phi=np.pi / 2, theta=-np.pi, name='Ym')
 Y2m = SingleQubitXYRotation(phi=np.pi / 2, theta=-np.pi / 2, name='Y2m')
 Y2p = SingleQubitXYRotation(phi=np.pi / 2, theta=np.pi / 2, name='Y2p')
+
+# Y2m_aux = SingleQubitXYRotation_AUX(phi=np.pi / 2, theta=-np.pi / 2, name='Y2m') #auxillary
+# Y2p_aux = SingleQubitXYRotation_AUX(phi=np.pi / 2, theta=np.pi / 2, name='Y2p') #auxillary
 
 # (X+Y)/2 gates (for cross-entropy benchmarking)
 W2p = SingleQubitXYRotation(phi= np.pi / 4, theta = np.pi / 2, name='W2p')

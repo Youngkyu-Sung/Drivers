@@ -17,8 +17,16 @@ class CustomSequence(Sequence):
 
     def generate_sequence(self, config):
         """Generate sequence by adding gates/pulses to waveforms."""
-        self.add_gate(qubit=0, gate=gates.Xp)
-        self.add_gate(qubit=1, gate=gates.Zp)
+        # just add pi-pulses for the number of available qubits
+
+        num_CZ_pulses = int(config.get('Parameter #1', 1))
+        delay_between_iSWAP_CZ = float(config.get('Parameter #2', 0))
+
+        for i in range(num_CZ_pulses):
+        	self.add_gate(qubit=[0,1,2], gate=gates.CZ_Cplr)
+        	self.add_gate(qubit=0, gate=gates.IdentityGate(delay_between_iSWAP_CZ)) # some delay
+        	self.add_gate(qubit=[0,1,2], gate=gates.iSWAP_Cplr)
+
         # pass
 if __name__ == '__main__':
     pass

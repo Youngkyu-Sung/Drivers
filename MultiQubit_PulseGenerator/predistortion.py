@@ -15,6 +15,9 @@ from numpy.fft import fft, fftfreq, fftshift, ifft, ifftshift
 from scipy.interpolate import interp1d
 
 
+import logging
+# Allow logging to Labber's instrument log
+log = logging.getLogger('LabberDriver')
 class Predistortion(object):
     """This class is used to predistort I/Q waveforms for qubit XY control."""
 
@@ -239,7 +242,6 @@ class ExponentialPredistortion:
              (1j * omega * self.tau5 + 1) +
              (1j * self.A6 * omega * self.tau6) /
              (1j * omega * self.tau6 + 1))
-
         Yc = Y / H
 
         yc = np.fft.irfft(Yc, norm='ortho')

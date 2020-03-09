@@ -639,7 +639,7 @@ class SequenceToWaveforms:
         if self.generate_gate_switch:
             self._add_microwave_gate()
         self._filter_output_waveforms()
-
+        self._zero_last_z_point()
         # Apply offsets
         self.readout_iq += self.readout_i_offset + 1j * self.readout_q_offset
 
@@ -923,6 +923,13 @@ class SequenceToWaveforms:
             for n in range(self.n_qubit):
                 self._wave_z[n] = self._apply_window_filter(
                     self._wave_z[n], window)
+
+    def _zero_last_z_point(self):
+        """Make sure last point in z waveforms is always zero, since this is 
+           the value output by the AWG between sequences.
+        """
+        for n in range(self.n_qubit):
+            self._wave_z[n][-1]=0
 
     def _get_filter_window(self, size=11, window='Kaiser', kaiser_beta=14.0):
         """Get filter for waveform convolution"""
@@ -1424,7 +1431,7 @@ class SequenceToWaveforms:
                         break
                     # pulses are indexed from 1 in Labber
                     _str = '%d-%d' % (n + 1, n + 2)
-                    num_pulses = int(config.get('Pulse number, 2QB (%s, %s, %s)'%(_gate, _qubit, _str)))
+                    num_pulses = int(config.get('Number of pulses, 2QB (%s, %s, %s)'%(_gate, _qubit, _str)))
                     list_pulses = []
                     list_delays = []
                     for i in range(num_pulses):
@@ -1437,7 +1444,10 @@ class SequenceToWaveforms:
 
                         if config.get('Pulse type #%d, 2QB (%s, %s, %s)'%(i+1, _gate, _qubit, _str)) in ['CZ', 'NetZero']:
                             # spectra
-                            if config.get('Assume linear dependence  #%d, 2QB (%s, %s, %s)'%(i+1, _gate, _qubit, _str), True):
+                            log.info('CZ Pulse!')
+
+                            log.info('Assume linear dependence #%d, 2QB (%s, %s, %s): '%(i+1, _gate, _qubit, _str) + str(config.get('Assume linear dependence #%d, 2QB (%s, %s, %s)'%(i+1, _gate, _qubit, _str), True)))
+                            if config.get('Assume linear dependence #%d, 2QB (%s, %s, %s)'%(i+1, _gate, _qubit, _str), True):
                                 pulse.qubit = None
                             else:
                                 pulse.qubit = self.qubits[n]
@@ -1518,8 +1528,11 @@ class SequenceToWaveforms:
                             pulse.start_at_zero = config.get('Start at zero #%d, 2QB (%s, %s, %s)'%(i+1, _gate, _qubit, _str))
                             # pulse-specific parameters
                             pulse.amplitude = config.get('Amplitude #%d, 2QB (%s, %s, %s)'%(i+1, _gate, _qubit, _str))
+                            pulse.amplitude_backward = config.get('Backward Amplitude #%d, 2QB (%s, %s, %s)'%(i+1, _gate, _qubit, _str))
                             pulse.width = config.get('Width #%d, 2QB (%s, %s, %s)'%(i+1, _gate, _qubit, _str))
+                            pulse.width_backward = config.get('Backward Width #%d, 2QB (%s, %s, %s)'%(i+1, _gate, _qubit, _str))
                             pulse.plateau = config.get('Plateau #%d, 2QB (%s, %s, %s)'%(i+1, _gate, _qubit, _str))
+                            pulse.plateau_backward = config.get('Backward Plateau #%d, 2QB (%s, %s, %s)'%(i+1, _gate, _qubit, _str))
                             pulse.frequency = config.get('Frequency #%d, 2QB (%s, %s, %s)'%(i+1, _gate, _qubit, _str))
                             pulse.phase = config.get('Phase #%d, 2QB (%s, %s, %s)'%(i+1, _gate, _qubit, _str))
                         list_pulses.append(pulse)
@@ -1529,8 +1542,10 @@ class SequenceToWaveforms:
 
                     # composite_pulse = pulses.CompositePulse(list_pulses = list_pulses, list_delays = list_delays)
                     make_net_zero = bool(config.get('Make Net-Zero, 2QB (%s, %s, %s)'%(_gate, _qubit, _str), False))
+                    net_zero_spacing = config.get('Net-Zero Spacing, 2QB (%s, %s, %s)'%(_gate, _qubit, _str), 0.0)
+                    
                     if (make_net_zero == True):
-                        composite_pulse = pulses.NetZero_CompositePulse(pulses.CompositePulse(list_pulses = list_pulses, list_delays = list_delays))
+                        composite_pulse = pulses.NetZero_CompositePulse(pulses.CompositePulse(list_pulses = list_pulses, list_delays = list_delays), net_zero_spacing = net_zero_spacing)
                     else:
                         composite_pulse = pulses.CompositePulse(list_pulses = list_pulses, list_delays = list_delays)
                     gates.CZ.new_angles(

@@ -13,12 +13,15 @@ from sequence import Sequence
 log = logging.getLogger('LabberDriver')
 
 class CustomSequence(Sequence):
-    """Sequence for driving Rabi oscillations in multiple qubits."""
+	"""Sequence for driving Rabi oscillations in multiple qubits."""
 
-    def generate_sequence(self, config):
-        """Generate sequence by adding gates/pulses to waveforms."""
-        self.add_gate(qubit=0, gate=gates.Xp)
-        self.add_gate(qubit=1, gate=gates.Zp)
-        # pass
+	def generate_sequence(self, config):
+		"""Generate sequence by adding gates/pulses to waveforms."""
+		# just add pi-pulses for the number of available qubits
+		self.add_gate_to_all(gates.IdentityGate(width = 100e-6), t0 = 50e-6)
+		self.add_gate_to_all(gates.Xp, t0 = 50e-6)
+		self.add_gate_to_all(gates.Zp, t0 = 50e-6)
+
+		# pass
 if __name__ == '__main__':
-    pass
+	pass

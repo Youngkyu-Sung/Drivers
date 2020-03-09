@@ -185,6 +185,9 @@ class StateTomography(object):
                 'Qubit 1 # tomography')]
             self.twoQBtomoID2 = dnQubitsTranslate[config.get(
                 'Qubit 2 # tomography')]
+            self.state_tomo_adjust_theta = config.get('State Tomography pulse - Adjust theta', False)
+            self.state_tomo_theta1 = config.get('State Tomography pulse - QB1 theta', 0)
+            self.state_tomo_theta2 = config.get('State Tomography pulse - QB2 theta', 0)
 
             # Format: Tomography pulse index 2-QB (n pulse set)
             pulseCall = 'Tomography pulse index 2-QB' + \
@@ -219,8 +222,8 @@ class StateTomography(object):
             qubitID1 = self.twoQBtomoID1 - 1
             qubitID2 = self.twoQBtomoID2 - 1
             gate = [None, None]
-
             if self.tomography_index == 'XX: Y2m-Y2m':
+
                 gate = [gates.Y2m, gates.Y2m]
             elif self.tomography_index == 'YX: X2p-Y2m':
                 gate = [gates.X2p, gates.Y2m]
@@ -238,6 +241,16 @@ class StateTomography(object):
                 gate = [gates.X2p, gates.I]
             elif self.tomography_index == 'ZZ: I-I':
                 gate = [gates.I, gates.I]
+
+            if (self.state_tomo_adjust_theta == True): 
+                phi_qb1 = getattr(gate[0], 'phi', 0)
+                phi_qb2 = getattr(gate[1], 'phi', 0)
+                name_qb1 = getattr(gate[0], 'name', None)
+                name_qb2 = getattr(gate[1], 'name', None)
+                tomo_qb1 = gates.SingleQubitXYRotation(phi=phi_qb1, theta=self.state_tomo_theta1, name=name_qb1)
+                tomo_qb2 = gates.SingleQubitXYRotation(phi=phi_qb2, theta=self.state_tomo_theta2, name=name_qb2)
+                gate = [tomo_qb1, tomo_qb2]
+
             sequence.add_gate([qubitID1, qubitID2], gate)
 
         elif self.tomography_scheme == 'Two qubit (30 pulse set)':

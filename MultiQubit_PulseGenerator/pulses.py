@@ -47,8 +47,11 @@ class Pulse:
 
         # set variables
         self.amplitude = 0.5
+        self.amplitude_backward = -0.5
         self.width = 10E-9
+        self.width_backward = 0
         self.plateau = 0.0
+        self.plateau_backward = 0.0
         self.frequency = 0.0
         self.phase = 0.0
         self.use_drag = False
@@ -329,7 +332,7 @@ class CZ(Pulse):
         # clip theta_f to remove numerical outliers
         theta_t = np.clip(theta_t, self.theta_i, None)
         df = 2*self.Coupling * (1 / np.tan(theta_t) - 1 / np.tan(self.theta_i))
-
+        log.info('self.qubit: ' +str(self.qubit))
         if self.qubit is None:
             # Use linear dependence if no qubit was given
             # log.info('---> df (linear): ' +str(df))
@@ -411,101 +414,90 @@ class CompositePulse():
     def __init__(self, *args, **kwargs):
         self.list_pulses = kwargs.get('list_pulses', []) # list of Pulse() objects 
         self.list_delays = kwargs.get('list_delays', [])
-    def total_duration(self):
+
+    def total_duration(self, NetZero = False):
         _duration = 0
         for i in range(len(self.list_pulses)):
             _pulse = self.list_pulses[i]
-            if i > 0:
-                _duration = max(_duration, _pulse.total_duration() + self.list_delays[i-1] )
+            if (NetZero == True):
+                #replace the pulse by the backward pulse
+                prev_amplitude = _pulse.amplitude
+                prev_width = _pulse.width
+                prev_plateau = _pulse.plateau
+                _pulse.amplitude = _pulse.amplitude_backward
+                _pulse.width = _pulse.width_backward
+                _pulse.plateau = _pulse.plateau_backward
+
+            #skip zero-duration pulse
+            if _pulse.total_duration == 0:
+                pass
             else:
-                _duration = max(_duration, _pulse.total_duration())
-            # log.info(_duration, _pulse.total_duration, self.list_delays[i-1])
-        # log.info('total duration: ' + str(_duration))
-            # log.info('pulse_duration: ' + str(_pulse.total_duration()))
-            # log.info('delay: ' + str(self.list_delays[i-1]))
+                if i > 0:
+                    _duration = max(_duration, _pulse.total_duration() + self.list_delays[i-1] )
+                else:
+                    _duration = max(_duration, _pulse.total_duration())
+            if (NetZero == True):
+                #return the pulse back to its original pulse
+                _pulse.amplitude = prev_amplitude
+                _pulse.width = prev_width
+                _pulse.plateau = prev_plateau
         return _duration
 
-    # def calculate_envelope(self, t0, t):
-    #     _envelope = 0
-    #     for i in range(len(self.list_pulses)):
-    #         _pulse = self.list_pulses[i]
-    #         if i > 0:
-    #             t_center = t0 + self.list_delays[i-1]
-    #         else:
-    #             t_center = t0
-    #         y = _pulse.calculate_envelope(t_center, t)
-    #         _envelope+= y
-    #     return _envelope
 
-    def calculate_waveform(self, t0, t):#, _recursive = False):
+    def calculate_waveform(self, t0, t, NetZero = False):#, _recursive = False):
         _waveform = 0
 
         for i in range(len(self.list_pulses)):
             _pulse = self.list_pulses[i]
+            if (NetZero == True):
+                prev_amplitude = _pulse.amplitude
+                prev_width = _pulse.width
+                prev_plateau = _pulse.plateau
+                _pulse.amplitude = _pulse.amplitude_backward
+                _pulse.width = _pulse.width_backward
+                _pulse.plateau = _pulse.plateau_backward
+
             if i > 0:
-                t_center = t0 + self.list_delays[i-1] + (_pulse.total_duration() - self.total_duration())*0.5
+                t_center = t0 + self.list_delays[i-1] + (_pulse.total_duration() - self.total_duration(NetZero = NetZero))*0.5
             else:
-                t_center = t0 + (_pulse.total_duration() - self.total_duration())*0.5
+                t_center = t0 + (_pulse.total_duration() - self.total_duration(NetZero = NetZero))*0.5
 
-            y = _pulse.calculate_envelope(t_center, t)
-            phase = _pulse.phase
-            omega = 2 * np.pi * _pulse.frequency
-            if _pulse.frequency > 0:
-                y = y*np.cos(omega * t + phase/180.0*np.pi)
-            # Make sure the waveform is zero outside the pulse
-            y[t < (t_center - _pulse.total_duration() / 2)] = 0
-            y[t > (t_center + _pulse.total_duration() / 2)] = 0
+            if _pulse.total_duration() > 0:
+                y = _pulse.calculate_envelope(t_center, t)
+                phase = _pulse.phase
+                omega = 2 * np.pi * _pulse.frequency
+                if _pulse.frequency > 0:
+                    y = y*np.cos(omega * t + phase/180.0*np.pi)
 
-            if _pulse.transduce_pulse:
-                y = _pulse.transduce_func(y)
-            # if _pulse.use_drag and _pulse.complex:
-            #     beta = _pulse.drag_coefficient / (t[1] - t[0])
-            #     y = y + 1j * beta * np.gradient(y)
-            #     y = y * np.exp(1j * 2 * np.pi * _pulse.drag_detuning *
-            #                    (t - t_center + _pulse.total_duration() / 2))
+                # Make sure the waveform is zero outside the pulse
+                y[t < (t_center - _pulse.total_duration() / 2)] = 0
+                y[t > (t_center + _pulse.total_duration() / 2)] = 0
 
-            # if _pulse.complex:
-            #     # Apply phase and SSB
-            #     phase = _pulse.phase
-            #     # single-sideband mixing, get frequency
-            #     omega = 2 * np.pi * _pulse.frequency
-            #     # apply SSBM transform
-            #     data_i = (y.real * np.cos(omega * t - phase) +
-            #               -y.imag * np.cos(omega * t - phase + +np.pi / 2))
-            #     data_q = (y.real * np.sin(omega * t - phase) +
-            #               -y.imag * np.sin(omega * t - phase + +np.pi / 2))
-            #     y = data_i + 1j * data_q
-            # else:
-            #     phase = _pulse.phase
-            #     omega = 2 * np.pi * _pulse.frequency
-            #     y = np.cos(omega * t + phase)
-            #     # pass
+                if _pulse.transduce_pulse:
+                    y = _pulse.transduce_func(y)
 
-            _waveform += y
+                if (NetZero == True):
+                    _pulse.amplitude = prev_amplitude
+                    _pulse.width = prev_width
+                    _pulse.plateau = prev_plateau
+                _waveform += y
         return _waveform
-    # def calculate_envelope(self, t0, t):
-    #     return (self.slepian.calculate_envelope(t0-self.total_duration()/4, t) -
-    #             self.slepian.calculate_envelope(t0+self.total_duration()/4, t))
-    #     return _waveform
-
 
 class NetZero_CompositePulse():
     def __init__(self, composite_pulse, *args, **kwargs):
         # super().__init__()
         self.composite_pulse = composite_pulse
+        self.net_zero_spacing = kwargs.get('net_zero_spacing', 0)
         # self.composite_pulse.width /= 2
         # self.composite_pulse.plateau /= 2
 
     def total_duration(self):
-        return 2*self.composite_pulse.total_duration()
-
-    # def calculate_waveform(self):
-    #     # self.composite_pulse = CompositePulse()
-    #     # self.composite_pulse.__dict__ = copy.copy(self.__dict__)
-    #     self.composite_pulse.calculate_waveform()
+        return self.composite_pulse.total_duration() + self.composite_pulse.total_duration(NetZero = True) + self.net_zero_spacing
 
     def calculate_waveform(self, t0, t):
-        return (self.composite_pulse.calculate_waveform(t0-self.total_duration()/4, t) -
-                self.composite_pulse.calculate_waveform(t0+self.total_duration()/4, t))
+        return (self.composite_pulse.calculate_waveform(t0 - self.composite_pulse.total_duration(NetZero = True)*0.5 - self.net_zero_spacing *0.5, t, NetZero = False) 
+                +
+                self.composite_pulse.calculate_waveform(t0 + self.composite_pulse.total_duration(NetZero = False)*0.5 + self.net_zero_spacing * 0.5, t, NetZero = True)
+                )
 if __name__ == '__main__':
     pass

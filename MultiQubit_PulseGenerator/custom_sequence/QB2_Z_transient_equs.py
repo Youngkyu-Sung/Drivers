@@ -17,8 +17,13 @@ class CustomSequence(Sequence):
 
     def generate_sequence(self, config):
         """Generate sequence by adding gates/pulses to waveforms."""
-        self.add_gate(qubit=0, gate=gates.Xp)
-        self.add_gate(qubit=1, gate=gates.Zp)
+        pulse_delay = config.get('Parameter #1')
+        self.add_gate(qubit=2, gate=gates.X2p)
+        self.add_gate(qubit=2, gate=gates.IdentityGate(width=50e-9)) # some delay
+        self.add_gate(qubit=2, gate=gates.Zp)
+        self.add_gate(qubit=2, gate=gates.IdentityGate(width=pulse_delay)) # some delay
+
+
         # pass
 if __name__ == '__main__':
     pass

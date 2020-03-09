@@ -18,16 +18,15 @@ class CustomSequence(Sequence):
 	def generate_sequence(self, config):
 		"""Generate sequence by adding gates/pulses to waveforms."""
 		# just add pi-pulses for the number of available qubits
-
-		num_CZ_pulses = int(config.get('Parameter #1', 1))
-		pulse_spacing = float(config.get('Parameter #2', 0))
-
-		self.add_gate_to_all(gates.IdentityGate(width = 15e-9)) #Give enough spacing between the first preparation pulse and the 2qb pulse
-		
-		for i in range(num_CZ_pulses):
-			self.add_gate(qubit=[0,1,2], gate=gates.CZ_Cplr)
-			self.add_gate_to_all(gates.IdentityGate(width = pulse_spacing))
-			
+		QB2_excited= bool(config['Parameter #1'])
+		# self.add_gate(qubit=0, gate=gates.I)
+		if QB2_excited == True:
+			gate_qb2 = gates.Xp
+		else:
+			gate_qb2 = gates.I
+		self.add_gate(qubit=[0,1,2], gate=[gates.X2p, gates.I, gate_qb2])
+		self.add_gate(qubit=[0,1,2], gate=[gates.I, gates.Zp, gates.Zp])
+		self.add_gate(qubit=[0,1,2], gate=[gates.X2p, gates.I, gate_qb2])
 		# pass
 if __name__ == '__main__':
 	pass

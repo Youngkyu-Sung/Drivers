@@ -984,6 +984,7 @@ class TwoQubit_RB(Sequence):
             [[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]])
         log.info('gate_seq_1: ' + str(gate_seq_1))
         log.info('gate_seq_Cplr: ' + str(gate_seq_Cplr))
+        log.info('gate_seq_2: ' + str(gate_seq_2))
         for i in range(len(gate_seq_1)):
             gate_1 = np.matrix([[1, 0], [0, 1]])
             gate_2 = np.matrix([[1, 0], [0, 1]])
@@ -1282,11 +1283,11 @@ class TwoQubit_XEB(Sequence):
         write_seq = config.get('Write sequence as txt file', False)
         generator = config.get('Native 2-QB gate', 'CZ_Cplr')
 
-        if generator == 'CZ':
+        if generator in ['CZ']:
             qubits_to_benchmark = [int(config['Qubits to Benchmark'][0]) - 1, 
                 int(config['Qubits to Benchmark'][2]) - 1] 
 
-        elif generator in ['iSWAP_Cplr', 'CZ_Cplr']:
+        elif generator in ['iSWAP_Cplr', 'CZ_Cplr', 'I']:
             qubits_to_benchmark = [int(config['Qubits to Benchmark (Coupler)'][0]) - 1, 
                 int(config['Qubits to Benchmark (Coupler)'][2]) - 1,
                 int(config['Qubits to Benchmark (Coupler)'][4]) - 1,] 
@@ -1321,11 +1322,14 @@ class TwoQubit_XEB(Sequence):
                 add_singleQ_forXEB(rndnum2, gateSeq2)
                 if generator in ['iSWAP_Cplr', 'CZ_Cplr']:
                     gateSeqCplr.append(gates.I)
-
                 # add two qubit gate 
                 if generator == 'CZ':
                     gateSeq1.append(gates.I)
                     gateSeq2.append(gates.CZ)
+                elif generator == 'I':
+                    # gateSeq1.append(gates.I)
+                    # gateSeq2.append(gates.I)
+                    pass
                 elif generator == 'iSWAP_Cplr':
                     gateSeq1.append(gates.I)
                     gateSeqCplr.append(gates.iSWAP_Cplr)
@@ -1333,16 +1337,16 @@ class TwoQubit_XEB(Sequence):
                 elif generator == 'CZ_Cplr':
                     gateSeq1.append(gates.I)
                     gateSeqCplr.append(gates.CZ_Cplr)
-                    gateSeq2.append(Gates.I)
+                    gateSeq2.append(gates.I)
 
                 
-            if (generator == 'CZ'):
-                multi_gate_seq.append(gateSeq2)
+            if (generator in ['CZ']):
                 multi_gate_seq.append(gateSeq1)
-            elif (generator in ['iSWAP_Cplr', 'CZ_Cplr']):
                 multi_gate_seq.append(gateSeq2)
+            elif (generator in ['iSWAP_Cplr', 'CZ_Cplr', 'I']):
+                multi_gate_seq.append(gateSeq1)
                 multi_gate_seq.append(gateSeqCplr)
-                multi_gate_seq.append(gateSeq1)
+                multi_gate_seq.append(gateSeq2)
 
             # transpose list of lists
             multi_gate_seq = list(map(list, itertools.zip_longest(*multi_gate_seq, fillvalue=gates.I))) # Not to chop
@@ -1353,6 +1357,8 @@ class TwoQubit_XEB(Sequence):
                         self.add_gate(qubit = qubits_to_benchmark, gate = gate_seq[0])
                     else:
                         self.add_gate(qubit = qubits_to_benchmark, gate = gate_seq)
+                elif generator == 'I':
+                    self.add_gate(qubit = qubits_to_benchmark, gate = gate_seq)
                 elif generator == 'iSWAP_Cplr':
                     if gate_seq[1] == gates.iSWAP_Cplr:
                         self.add_gate(qubit=qubits_to_benchmark, gate=gate_seq[1])
@@ -1389,6 +1395,8 @@ class TwoQubit_XEB(Sequence):
                         self.add_gate(qubit=qubits_to_benchmark, gate=gate_seq[0])
                     else:
                         self.add_gate(qubit=qubits_to_benchmark, gate=gate_seq)
+                elif generator == 'I':
+                    self.add_gate(qubit=qubits_to_benchmark, gate=gate_seq)
                 elif generator == 'iSWAP_Cplr':
                     if gate_seq[1] == gates.iSWAP_Cplr:
                         self.add_gate(qubit=qubits_to_benchmark, gate=gate_seq[1])
