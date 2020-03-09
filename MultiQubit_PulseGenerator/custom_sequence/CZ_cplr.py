@@ -21,11 +21,17 @@ class CustomSequence(Sequence):
 
 		num_CZ_pulses = int(config.get('Parameter #1', 1))
 		pulse_spacing = float(config.get('Parameter #2', 0))
+		alternate_polarity = bool(config.get('Alternate 2QB pulse polarity', False))
 
 		self.add_gate_to_all(gates.IdentityGate(width = 15e-9)) #Give enough spacing between the first preparation pulse and the 2qb pulse
-		
 		for i in range(num_CZ_pulses):
-			self.add_gate(qubit=[0,1,2], gate=gates.CZ_Cplr)
+			if alternate_polarity == True:
+				if i % 2 == 0:
+					self.add_gate(qubit=[0,1,2], gate = gates.CZ_Cplr)
+				else:
+					self.add_gate(qubit=[0,1,2], gate = gates.CZ_Cplr_opposite)
+			else:
+				self.add_gate(qubit=[0,1,2], gate=gates.CZ_Cplr)
 			self.add_gate_to_all(gates.IdentityGate(width = pulse_spacing))
 			
 		# pass

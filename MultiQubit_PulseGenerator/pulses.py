@@ -47,11 +47,11 @@ class Pulse:
 
         # set variables
         self.amplitude = 0.5
-        self.amplitude_backward = -0.5
+        self.amplitude_opposite = -0.5
         self.width = 10E-9
-        self.width_backward = 0
+        self.width_opposite = 0
         self.plateau = 0.0
-        self.plateau_backward = 0.0
+        self.plateau_opposite = 0.0
         self.frequency = 0.0
         self.phase = 0.0
         self.use_drag = False
@@ -420,13 +420,13 @@ class CompositePulse():
         for i in range(len(self.list_pulses)):
             _pulse = self.list_pulses[i]
             if (NetZero == True):
-                #replace the pulse by the backward pulse
+                #replace the pulse by the opposite-polarity pulse
                 prev_amplitude = _pulse.amplitude
                 prev_width = _pulse.width
                 prev_plateau = _pulse.plateau
-                _pulse.amplitude = _pulse.amplitude_backward
-                _pulse.width = _pulse.width_backward
-                _pulse.plateau = _pulse.plateau_backward
+                _pulse.amplitude = _pulse.amplitude_opposite
+                _pulse.width = _pulse.width_opposite
+                _pulse.plateau = _pulse.plateau_opposite
 
             #skip zero-duration pulse
             if _pulse.total_duration == 0:
@@ -453,9 +453,9 @@ class CompositePulse():
                 prev_amplitude = _pulse.amplitude
                 prev_width = _pulse.width
                 prev_plateau = _pulse.plateau
-                _pulse.amplitude = _pulse.amplitude_backward
-                _pulse.width = _pulse.width_backward
-                _pulse.plateau = _pulse.plateau_backward
+                _pulse.amplitude = _pulse.amplitude_opposite
+                _pulse.width = _pulse.width_opposite
+                _pulse.plateau = _pulse.plateau_opposite
 
             if i > 0:
                 t_center = t0 + self.list_delays[i-1] + (_pulse.total_duration() - self.total_duration(NetZero = NetZero))*0.5

@@ -707,6 +707,7 @@ class TwoQubit_RB(Sequence):
         multi_seq = config.get('Output multiple sequences', False)
         write_seq = config.get('Write sequence as txt file', False)
         generator = config.get('Native 2-QB gate', 'CZ_Cplr')
+        alternate_polarity = bool(config.get('Alternate 2QB pulse polarity', False))
 
         if generator == 'CZ':
             qubits_to_benchmark = [int(config['Qubits to Benchmark'][0]) - 1, 
@@ -729,6 +730,7 @@ class TwoQubit_RB(Sequence):
                 self.prev_N_cliffords != N_cliffords or
                 self.prev_interleave != interleave or
                 self.prev_generator != generator or
+                self.prev_alternate_polarity != alternate_polarity or 
                 multi_seq or
                 self.prev_interleaved_gate != interleaved_gate):
 
@@ -737,6 +739,7 @@ class TwoQubit_RB(Sequence):
             self.prev_interleave = interleave
             self.prev_sequence = sequence
             self.prev_generator = generator
+            self.prev_alternate_polarity = alternate_polarity
 
             multi_gate_seq = []
 
@@ -842,6 +845,18 @@ class TwoQubit_RB(Sequence):
                 if generator in ['iSWAP_Cplr', 'CZ_Cplr']:
                     gateSeqCplr.append(gates.I)
 
+            # Alternate polarity of 2qb pulse
+            if (alternate_polarity == True):
+                if generator == 'CZ_Cplr':
+                    cnt = 0
+                    for i, gate in enumerate(gateSeqCplr):
+                        if gate == gates.CZ_Cplr:
+                            if cnt %2 == 0:
+                                pass
+                            else:
+                                gateSeqCplr[i] = gates.CZ_Cplr_opposite
+                            cnt = cnt + 1
+
             # test the recovery gate
             psi_gnd = np.matrix('1; 0; 0; 0') # ground state |00>
             if write_seq == True:
@@ -930,7 +945,7 @@ class TwoQubit_RB(Sequence):
                     else:
                         self.add_gate(qubit=qubits_to_benchmark, gate=gate_seq)
                 elif generator == 'CZ_Cplr':
-                    if gate_seq[1] == gates.CZ_Cplr:
+                    if gate_seq[1] in [gates.CZ_Cplr, gates.CZ_Cplr_opposite]:
                         self.add_gate(qubit=qubits_to_benchmark, gate=gate_seq[1])
 
                     else:
@@ -957,7 +972,7 @@ class TwoQubit_RB(Sequence):
                     else:
                         self.add_gate(qubit=qubits_to_benchmark, gate=gate_seq)
                 elif generator == 'CZ_Cplr':
-                    if gate_seq[1] == gates.CZ_Cplr:
+                    if gate_seq[1] in [gates.CZ_Cplr, gates.CZ_Cplr_opposite]:
                         self.add_gate(qubit=qubits_to_benchmark, gate=gate_seq[1])
                     else:
                         self.add_gate(qubit=qubits_to_benchmark, gate=gate_seq)
@@ -1260,6 +1275,7 @@ class TwoQubit_XEB(Sequence):
     prev_N_cycles = np.inf  # store the previous value
     prev_sequence = ''
     prev_gate_seq = []
+    prev_alternate_polarity = False
 
     def generate_sequence(self, config):
         """
@@ -1282,6 +1298,7 @@ class TwoQubit_XEB(Sequence):
         multi_seq = config.get('Output multiple sequences', False)
         write_seq = config.get('Write sequence as txt file', False)
         generator = config.get('Native 2-QB gate', 'CZ_Cplr')
+        alternate_polarity = bool(config.get('Alternate 2QB pulse polarity', False))
 
         if generator in ['CZ']:
             qubits_to_benchmark = [int(config['Qubits to Benchmark'][0]) - 1, 
@@ -1300,12 +1317,14 @@ class TwoQubit_XEB(Sequence):
                 self.prev_rnd_seed != rnd_seed or
                 self.prev_N_cycles != N_cycles or
                 self.prev_generator != generator or
+                self.prev_alternate_polarity != alternate_polarity or
                 multi_seq):
 
             self.prev_rnd_seed = rnd_seed
             self.prev_N_cycles = N_cycles
             self.prev_sequence = sequence
             self.prev_generator = generator
+            self.prev_alternate_polarity = alternate_polarity
 
             multi_gate_seq = []
 
@@ -1348,6 +1367,18 @@ class TwoQubit_XEB(Sequence):
                 multi_gate_seq.append(gateSeqCplr)
                 multi_gate_seq.append(gateSeq2)
 
+            # Alternate polarity of 2qb pulse
+            if (alternate_polarity == True):
+                if generator == 'CZ_Cplr':
+                    cnt = 0
+                    for i, gate in enumerate(gateSeqCplr):
+                        if gate == gates.CZ_Cplr:
+                            if cnt %2 == 0:
+                                pass
+                            else:
+                                gateSeqCplr[i] = gates.CZ_Cplr_opposite
+                            cnt = cnt + 1
+
             # transpose list of lists
             multi_gate_seq = list(map(list, itertools.zip_longest(*multi_gate_seq, fillvalue=gates.I))) # Not to chop
 
@@ -1365,10 +1396,11 @@ class TwoQubit_XEB(Sequence):
                     else:
                         self.add_gate(qubit=qubits_to_benchmark, gate=gate_seq)
                 elif generator == 'CZ_Cplr':
-                    if gate_seq[1] == gates.CZ_Cplr:
+                    if gate_seq[1] in [gates.CZ_Cplr, gates.CZ_Cplr_opposite]:
                         self.add_gate(qubit=qubits_to_benchmark, gate=gate_seq[1])
                     else:
                         self.add_gate(qubit=qubits_to_benchmark, gate=gate_seq)
+                        
             self.prev_gate_seq = multi_gate_seq
         
             if write_seq == True:
@@ -1403,7 +1435,7 @@ class TwoQubit_XEB(Sequence):
                     else:
                         self.add_gate(qubit=qubits_to_benchmark, gate=gate_seq)
                 elif generator == 'CZ_Cplr':
-                    if gate_seq[1] == gates.CZ_Cplr:
+                    if gate_seq[1] in [gates.CZ_Cplr, gates.CZ_Cplr_opposite]:
                         self.add_gate(qubit=qubits_to_benchmark, gate=gate_seq[1])
                     else:
                         self.add_gate(qubit=qubits_to_benchmark, gate=gate_seq)

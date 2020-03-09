@@ -537,7 +537,9 @@ class SequenceToWaveforms:
         self.pulses_iSWAP_cplr = [None for n in range(self.n_qubit)]
         self.pulses_iSWAP_tqb = [None for n in range(self.n_qubit)]
         self.pulses_CZ_cplr = [None for n in range(self.n_qubit)]
+        self.pulses_CZ_cplr_opposite = [None for n in range(self.n_qubit)]
         self.pulses_CZ_tqb = [None for n in range(self.n_qubit)]
+        self.pulses_CZ_tqb_opposite = [None for n in range(self.n_qubit)]
 
         # cross-talk
         self.compensate_crosstalk = False
@@ -598,7 +600,7 @@ class SequenceToWaveforms:
 
         self._explode_composite_gates()
         # log.info('Point 3: Sequence_list[1].gates = {}'.format(self.sequence_list[1].gates))
-        # log.info('Point 3: Sequence_list = {}'.format(self.sequence_list))
+        log.info('Point 3: Sequence_list = {}'.format(self.sequence_list))
 
         self._add_pulses_and_durations()
         # log.info('Point 4: Sequence_list[6].gates = {}'.format(self.sequence_list[6].gates))
@@ -735,8 +737,12 @@ class SequenceToWaveforms:
             pulse = gate.get_adjusted_pulse(self.pulses_iSWAP_tqb[0])
         elif isinstance(gate, gates.ZGate_Cplr_CZ):
             pulse = gate.get_adjusted_pulse(self.pulses_CZ_cplr[0])
+        elif isinstance(gate, gates.ZGate_Cplr_CZ_opposite):
+            pulse = gate.get_adjusted_pulse(self.pulses_CZ_cplr_opposite[0])
         elif isinstance(gate, gates.ZGate_TQB_CZ):
             pulse = gate.get_adjusted_pulse(self.pulses_CZ_tqb[0])
+        elif isinstance(gate, gates.ZGate_TQB_CZ_opposite):
+            pulse = gate.get_adjusted_pulse(self.pulses_CZ_tqb_opposite[0])
         elif isinstance(gate, gates.ReadoutGate):
             pulse = gate.get_adjusted_pulse(self.pulses_readout[qubit])
         elif isinstance(gate, gates.CustomGate):
@@ -745,6 +751,23 @@ class SequenceToWaveforms:
             raise ValueError('Please provide a pulse for {}'.format(gate))
 
         return pulse
+    def _swap_pulse_polarity(self, composite_pulse):
+        composite_pulse_new = copy.deepcopy(composite_pulse)
+
+        for i, pulse in enumerate(composite_pulse_new.list_pulses):
+
+            pulse_new = copy.deepcopy(pulse)
+            pulse_new.amplitude = pulse.amplitude_opposite
+            pulse_new.width = pulse.width_opposite
+            pulse_new.plateau = pulse.plateau_opposite
+            pulse_new.amplitude_opposite = pulse.amplitude
+            pulse_new.width_opposite = pulse.width
+            pulse_new.plateau_opposite = pulse.plateau_opposite
+
+            # replace the old pulse by the new pulse
+            composite_pulse_new.list_pulses[i] = pulse_new
+
+        return composite_pulse_new
 
     def _predistort_xy_waveforms(self):
         """Pre-distort the waveforms."""
@@ -1114,6 +1137,18 @@ class SequenceToWaveforms:
                     if self.compensate_crosstalk:
                         crosstalk = self._crosstalk.compensation_matrix[:,
                                                                         qubit]
+                elif isinstance(gate_obj, gates.ZGate_Cplr_CZ_opposite):
+                    waveform = self._wave_z[qubit]
+                    delay = self.wave_z_delays[qubit]
+                    if self.compensate_crosstalk:
+                        crosstalk = self._crosstalk.compensation_matrix[:,
+                                                                        qubit]
+                elif isinstance(gate_obj, gates.ZGate_TQB_CZ_opposite):
+                    waveform = self._wave_z[qubit]
+                    delay = self.wave_z_delays[qubit]
+                    if self.compensate_crosstalk:
+                        crosstalk = self._crosstalk.compensation_matrix[:,
+                                                                        qubit]
                 elif isinstance(gate_obj, gates.TwoQubitGate):
                     # log.info('adding 2qb gate waveforms')
                     waveform = self._wave_z[qubit]
@@ -1149,7 +1184,9 @@ class SequenceToWaveforms:
                                 gates.ZGate_Cplr_iSWAP,
                                 gates.ZGate_TQB_iSWAP,
                                 gates.ZGate_Cplr_CZ,
+                                gates.ZGate_Cplr_CZ_opposite,
                                 gates.ZGate_TQB_CZ,
+                                gates.ZGate_TQB_CZ_opposite,
                                 gates.TwoQubitGate))):
                     for q in range(self.n_qubit):
                         waveform = self._wave_z[q]
@@ -1444,9 +1481,6 @@ class SequenceToWaveforms:
 
                         if config.get('Pulse type #%d, 2QB (%s, %s, %s)'%(i+1, _gate, _qubit, _str)) in ['CZ', 'NetZero']:
                             # spectra
-                            log.info('CZ Pulse!')
-
-                            log.info('Assume linear dependence #%d, 2QB (%s, %s, %s): '%(i+1, _gate, _qubit, _str) + str(config.get('Assume linear dependence #%d, 2QB (%s, %s, %s)'%(i+1, _gate, _qubit, _str), True)))
                             if config.get('Assume linear dependence #%d, 2QB (%s, %s, %s)'%(i+1, _gate, _qubit, _str), True):
                                 pulse.qubit = None
                             else:
@@ -1528,11 +1562,11 @@ class SequenceToWaveforms:
                             pulse.start_at_zero = config.get('Start at zero #%d, 2QB (%s, %s, %s)'%(i+1, _gate, _qubit, _str))
                             # pulse-specific parameters
                             pulse.amplitude = config.get('Amplitude #%d, 2QB (%s, %s, %s)'%(i+1, _gate, _qubit, _str))
-                            pulse.amplitude_backward = config.get('Backward Amplitude #%d, 2QB (%s, %s, %s)'%(i+1, _gate, _qubit, _str))
+                            pulse.amplitude_opposite = config.get('Opposite Amplitude #%d, 2QB (%s, %s, %s)'%(i+1, _gate, _qubit, _str))
                             pulse.width = config.get('Width #%d, 2QB (%s, %s, %s)'%(i+1, _gate, _qubit, _str))
-                            pulse.width_backward = config.get('Backward Width #%d, 2QB (%s, %s, %s)'%(i+1, _gate, _qubit, _str))
+                            pulse.width_opposite = config.get('Opposite Width #%d, 2QB (%s, %s, %s)'%(i+1, _gate, _qubit, _str))
                             pulse.plateau = config.get('Plateau #%d, 2QB (%s, %s, %s)'%(i+1, _gate, _qubit, _str))
-                            pulse.plateau_backward = config.get('Backward Plateau #%d, 2QB (%s, %s, %s)'%(i+1, _gate, _qubit, _str))
+                            pulse.plateau_opposite = config.get('Opposite Plateau #%d, 2QB (%s, %s, %s)'%(i+1, _gate, _qubit, _str))
                             pulse.frequency = config.get('Frequency #%d, 2QB (%s, %s, %s)'%(i+1, _gate, _qubit, _str))
                             pulse.phase = config.get('Phase #%d, 2QB (%s, %s, %s)'%(i+1, _gate, _qubit, _str))
                         list_pulses.append(pulse)
@@ -1548,10 +1582,7 @@ class SequenceToWaveforms:
                         composite_pulse = pulses.NetZero_CompositePulse(pulses.CompositePulse(list_pulses = list_pulses, list_delays = list_delays), net_zero_spacing = net_zero_spacing)
                     else:
                         composite_pulse = pulses.CompositePulse(list_pulses = list_pulses, list_delays = list_delays)
-                    gates.CZ.new_angles(
-                        config.get('QB1 Phi 2QB #12'), config.get('QB2 Phi 2QB #12'))
                     _pulses[n] = composite_pulse
-
 
         # two-qubit (tunable qubit) pulses: composite pulses
         # for n, pulse in enumerate(self.pulses_iSWAP_tqb):
@@ -1636,12 +1667,18 @@ class SequenceToWaveforms:
         #     composite_pulse = pulses.CompositePulse(list_pulses = list_pulses, list_delays = list_delays)
 
         #     self.pulses_iSWAP_tqb[n] = composite_pulse
+        for i in [0]:
+            self.pulses_CZ_cplr_opposite[i] = self._swap_pulse_polarity(self.pulses_CZ_cplr[i])
+            self.pulses_CZ_tqb_opposite[i] = self._swap_pulse_polarity(self.pulses_CZ_tqb[i])
 
         gates.iSWAP_Cplr.new_angles(
-            config.get('FQB Phi, 2QB (iSWAP, Cplr, 1-2)'), config.get('TQB Phi, 2QB (iSWAP, Cplr, 1-2)'))
+            config.get('FQB Phi, 2QB (iSWAP, Cplr, 1-2)'), config.get('TQB Phi, 2QB (iSWAP, Cplr, 1-2)'), polarity = 'positive')
 
         gates.CZ_Cplr.new_angles(
-            config.get('FQB Phi, 2QB (CZ, Cplr, 1-2)'), config.get('TQB Phi, 2QB (CZ, Cplr, 1-2)'))
+            config.get('FQB Phi, 2QB (CZ, Cplr, 1-2)'), config.get('TQB Phi, 2QB (CZ, Cplr, 1-2)'), polarity = 'positive')
+
+        gates.CZ_Cplr_opposite.new_angles(
+            config.get('FQB Phi, 2QB (CZ, Cplr, 1-2)'), config.get('TQB Phi, 2QB (CZ, Cplr, 1-2)'), polarity = 'negative')
 
         # predistortion
         self.perform_predistortion = config.get('Predistort waveforms', False)

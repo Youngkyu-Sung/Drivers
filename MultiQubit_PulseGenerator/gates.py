@@ -341,6 +341,22 @@ class ZGate_Cplr_CZ(OneQubitGate):
     def __repr__(self):
         return self.__str__()
 
+
+class ZGate_Cplr_CZ_opposite(OneQubitGate):
+    """Z pulses applied to a Coupler, to implement a CZ gate"""
+    def __init__(self, name='ZGate_Cplr_CZ_opposite'):
+        # super().__init__(theta=np.pi)
+        self.name = name
+
+    def get_adjusted_pulse(self, pulse):
+        self.pulse = copy(pulse)
+        return self.pulse
+
+    def __str__(self):
+        return "ZGate_Cplr_CZ_opposite"
+    def __repr__(self):
+        return self.__str__()
+
 class ZGate_TQB_CZ(OneQubitGate):
     """Z pulses applied to a tunable qubit, to implement a CZ gate"""
     def __init__(self, name='ZGate_TQB_CZ'):
@@ -353,6 +369,21 @@ class ZGate_TQB_CZ(OneQubitGate):
 
     def __str__(self):
         return "ZGate_TQB_CZ"
+    def __repr__(self):
+        return self.__str__()
+
+class ZGate_TQB_CZ_opposite(OneQubitGate):
+    """Z pulses applied to a tunable qubit, to implement a CZ gate"""
+    def __init__(self, name='ZGate_TQB_CZ_opposite'):
+        # super().__init__(theta=np.pi)
+        self.name = name
+
+    def get_adjusted_pulse(self, pulse):
+        pulse = copy(pulse)
+        return pulse
+
+    def __str__(self):
+        return "ZGate_TQB_CZ_opposite"
     def __repr__(self):
         return self.__str__()
 
@@ -486,12 +517,12 @@ class iSWAP_Cplr_with_1qb_phases(CompositeGate):
 
     """
 
-    def __init__(self, phi1, phi2):
+    def __init__(self, phi1, phi2, polarity):
         super().__init__(n_qubit=3, name = 'iSWAP_Cplr')
         self.add_gate([IdentityGate(width = 0), ZGate_Cplr_iSWAP(), ZGate_TQB_iSWAP()])
         self.add_gate([VirtualZGate(phi1), IdentityGate(width = 0), VirtualZGate(phi2)])
 
-    def new_angles(self, phi1, phi2):
+    def new_angles(self, phi1, phi2, polarity):
         """Update the angles of the single qubit rotations.
 
         Parameters
@@ -502,7 +533,7 @@ class iSWAP_Cplr_with_1qb_phases(CompositeGate):
             Z rotation angle for qubit 2.
 
         """
-        self.__init__(phi1, phi2)
+        self.__init__(phi1, phi2, polarity)
 
     def __str__(self):
         return "iSWAP_Cplr"
@@ -521,12 +552,16 @@ class CZ_Cplr_with_1qb_phases(CompositeGate):
 
     """
 
-    def __init__(self, phi1, phi2):
+    def __init__(self, phi1, phi2, polarity):
         super().__init__(n_qubit=3, name = 'CZ_Cplr')
-        self.add_gate([IdentityGate(width = 0), ZGate_Cplr_CZ(), ZGate_TQB_CZ()])
+        if polarity == 'positive':
+            self.add_gate([IdentityGate(width = 0), ZGate_Cplr_CZ(), ZGate_TQB_CZ()])
+        else:
+            self.add_gate([IdentityGate(width = 0), ZGate_Cplr_CZ_opposite(), ZGate_TQB_CZ_opposite()])
+
         self.add_gate([VirtualZGate(phi1), IdentityGate(width = 0), VirtualZGate(phi2)])
 
-    def new_angles(self, phi1, phi2):
+    def new_angles(self, phi1, phi2, polarity):
         """Update the angles of the single qubit rotations.
 
         Parameters
@@ -537,7 +572,7 @@ class CZ_Cplr_with_1qb_phases(CompositeGate):
             Z rotation angle for qubit 2.
 
         """
-        self.__init__(phi1, phi2)
+        self.__init__(phi1, phi2, polarity)
 
     def __str__(self):
         return "CZ_Cplr"
@@ -619,8 +654,9 @@ CNOT.add_gate(H, 1)
 CNOT.add_gate(CZ, [0, 1])
 CNOT.add_gate(H, 1)
 
-iSWAP_Cplr = iSWAP_Cplr_with_1qb_phases(0, 0) # start with 0, 0 as the single qubit phase shifts
-CZ_Cplr = CZ_Cplr_with_1qb_phases(0, 0) # start with 0, 0 as the single qubit phase shifts
+iSWAP_Cplr = iSWAP_Cplr_with_1qb_phases(0, 0, polarity = 'positive') # start with 0, 0 as the single qubit phase shifts
+CZ_Cplr = CZ_Cplr_with_1qb_phases(0, 0, polarity = 'positive') # start with 0, 0 as the single qubit phase shifts
+CZ_Cplr_opposite = CZ_Cplr_with_1qb_phases(0, 0, polarity = 'negative') # start with 0, 0 as the single qubit phase shifts
 # CplrGate = CustomGate()
 if __name__ == '__main__':
     pass
