@@ -252,6 +252,38 @@ class Square(Pulse):
 
         return values
 
+class Half_Cosine(Pulse):
+    def total_duration(self):
+        return self.width + self.plateau
+
+    def calculate_envelope(self, t0, t):
+        tau = self.width
+        if self.plateau == 0:
+            values = (1 *
+                      (np.sin(np.pi * (t - t0 + tau / 2) / tau)))
+
+        else:
+            values = np.ones_like(t)
+            values[t < t0 - self.plateau / 2] = 1 * \
+                (np.sin(np.pi *
+                            (t[t < t0 - self.plateau / 2] - t0 +
+                             self.plateau / 2 + tau / 2) / tau))
+            values[t > t0 + self.plateau / 2] = 1 * \
+                (np.sin(np.pi *
+                            (t[t > t0 + self.plateau / 2] - t0 -
+                             self.plateau / 2 + tau / 2) / tau))
+        if self.qubit is None:
+            values = values * self.amplitude
+        else:
+            final_V = 1
+            init_V = 0
+            values = (values-init_V)/(final_V-init_V)*(self.final_freq-self.init_freq) + self.init_freq
+            values = self.qubit.f_to_V(values)
+            
+        if self.negative_amplitude is True:
+            values = -values
+
+        return values
 
 class Cosine(Pulse):
     def total_duration(self):

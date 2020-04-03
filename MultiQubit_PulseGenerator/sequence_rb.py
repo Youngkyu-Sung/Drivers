@@ -401,16 +401,22 @@ def add_SWAP_like_twoQ_clifford(index, gate_seq_1, gate_seq_2, gate_seq_Cplr = [
     if generator == 'CZ':
         add_singleQ_clifford(index_1, gate_seq_1)
         add_singleQ_clifford(index_2, gate_seq_2)
+
         gate_seq_1.append(gates.I)
         gate_seq_2.append(gates.CZ)
+
         gate_seq_1.append(gates.Y2m)
         gate_seq_2.append(gates.Y2p)
+
         gate_seq_1.append(gates.I)
         gate_seq_2.append(gates.CZ)
+
         gate_seq_1.append(gates.Y2p)
         gate_seq_2.append(gates.Y2m)
+
         gate_seq_1.append(gates.I)
         gate_seq_2.append(gates.CZ)
+
         gate_seq_1.append(gates.I)
         gate_seq_2.append(gates.Y2p)
 
@@ -424,7 +430,7 @@ def add_SWAP_like_twoQ_clifford(index, gate_seq_1, gate_seq_2, gate_seq_Cplr = [
         gate_seq_2.append(gates.I)
 
         gate_seq_1.append(gates.Y2m)
-        gate_seq_Cplr.append(gates.CZ_Cplr)
+        gate_seq_Cplr.append(gates.I)
         gate_seq_2.append(gates.Y2p)
 
         gate_seq_1.append(gates.I)
@@ -432,7 +438,7 @@ def add_SWAP_like_twoQ_clifford(index, gate_seq_1, gate_seq_2, gate_seq_Cplr = [
         gate_seq_2.append(gates.I)
 
         gate_seq_1.append(gates.Y2p)
-        gate_seq_Cplr.append(gates.CZ_Cplr)
+        gate_seq_Cplr.append(gates.I)
         gate_seq_2.append(gates.Y2m)
 
         gate_seq_1.append(gates.I)
@@ -440,7 +446,7 @@ def add_SWAP_like_twoQ_clifford(index, gate_seq_1, gate_seq_2, gate_seq_Cplr = [
         gate_seq_2.append(gates.I)
 
         gate_seq_1.append(gates.I)
-        gate_seq_Cplr.append(gates.CZ_Cplr)
+        gate_seq_Cplr.append(gates.I)
         gate_seq_2.append(gates.Y2p)
 
 
@@ -766,14 +772,14 @@ class TwoQubit_RB(Sequence):
                             cliffordSeq2.append(g[0])
                     elif interleaved_gate == 'iSWAP_Cplr':
                         gate = gates.iSWAP_Cplr
-                        clifford_seq_1.append(g[2])
-                        clifford_seq_Cplr.append(g[1])
-                        clifford_seq_2.append(g[0])
+                        cliffordSeq1.append(gates.I)
+                        cliffordSeqCplr.append(gates.iSWAP_Cplr)
+                        cliffordSeq2.append(gates.I)
                     elif interleaved_gate == 'CZ_Cplr':
                         gate = gates.CZ_Cplr
-                        clifford_seq_1.append(g[2])
-                        clifford_seq_Cplr.append(g[1])
-                        clifford_seq_2.append(g[0])
+                        cliffordSeq1.append(gates.I)
+                        cliffordSeqCplr.append(gates.CZ_Cplr)
+                        cliffordSeq2.append(gates.I)
                     elif interleaved_gate == 'I':
                         # TBA: adjust the duration of I gates?
                         # log.info('Qubits to benchmark: ' + str(qubits_to_benchmark))

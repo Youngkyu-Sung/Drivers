@@ -22,9 +22,9 @@ class CustomSequence(Sequence):
         # multi_gate_seq.append(gates.iSWAP_Cplr)
         tau = config['Parameter #1']
         # self.add_gate(qubit=0, gate=gates.I)
-        self.add_gate(qubit=0, gate=gates.X2p)
-        self.add_gate(qubit=0, gate=gates.IdentityGate(width=tau)) 
-        self.add_gate(qubit=0, gate=gates.X2p) 
+        self.add_gate(qubit=2, gate=gates.X2p)
+        self.add_gate(qubit=2, gate=gates.IdentityGate(width=tau)) 
+        self.add_gate(qubit=2, gate=gates.X2p) 
         # pass
 if __name__ == '__main__':
     pass
