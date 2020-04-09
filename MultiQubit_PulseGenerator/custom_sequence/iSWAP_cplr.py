@@ -13,14 +13,24 @@ from sequence import Sequence
 log = logging.getLogger('LabberDriver')
 
 class CustomSequence(Sequence):
-    """Sequence for driving Rabi oscillations in multiple qubits."""
+	"""Sequence for driving Rabi oscillations in multiple qubits."""
 
-    def generate_sequence(self, config):
-        """Generate sequence by adding gates/pulses to waveforms."""
-        # just add pi-pulses for the number of available qubits
-        # multi_gate_seq = []
-        # multi_gate_seq.append(gates.iSWAP_Cplr)
-        self.add_gate(qubit=[0,1,2], gate=gates.iSWAP_Cplr)
-        # pass
+	def generate_sequence(self, config):
+		"""Generate sequence by adding gates/pulses to waveforms."""
+		num_iSWAP_pulses = int(config.get('Parameter #1', 1))
+		pulse_spacing = float(config.get('Parameter #2', 0))
+		alternate_polarity = bool(config.get('Alternate 2QB pulse polarity', False))
+
+		self.add_gate_to_all(gates.IdentityGate(width = 15e-9)) #Give enough spacing between the first preparation pulse and the 2qb pulse
+		for i in range(num_iSWAP_pulses):
+			if alternate_polarity == True:
+				if i % 2 == 0:
+					self.add_gate(qubit=[0,1,2], gate = gates.iSWAP_Cplr)
+				else:
+					self.add_gate(qubit=[0,1,2], gate = gates.iSWAP_Cplr_opposite)
+			else:
+				self.add_gate(qubit=[0,1,2], gate=gates.iSWAP_Cplr)
+			self.add_gate_to_all(gates.IdentityGate(width = pulse_spacing))
+
 if __name__ == '__main__':
-    pass
+	pass

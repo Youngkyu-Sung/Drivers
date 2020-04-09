@@ -655,6 +655,8 @@ CNOT.add_gate(CZ, [0, 1])
 CNOT.add_gate(H, 1)
 
 iSWAP_Cplr = iSWAP_Cplr_with_1qb_phases(0, 0, polarity = 'positive') # start with 0, 0 as the single qubit phase shifts
+iSWAP_Cplr_opposite = iSWAP_Cplr_with_1qb_phases(0, 0, polarity = 'negative') # start with 0, 0 as the single qubit phase shifts
+
 CZ_Cplr = CZ_Cplr_with_1qb_phases(0, 0, polarity = 'positive') # start with 0, 0 as the single qubit phase shifts
 CZ_Cplr_opposite = CZ_Cplr_with_1qb_phases(0, 0, polarity = 'negative') # start with 0, 0 as the single qubit phase shifts
 # CplrGate = CustomGate()
