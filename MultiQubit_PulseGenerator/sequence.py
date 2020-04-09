@@ -618,7 +618,8 @@ class SequenceToWaveforms:
             for step in self.sequence_list:
                 step.time_shift(shift)
 
-        self._perform_virtual_z()
+        # self._perform_virtual_z()
+        self._perform_virtual_z_iswap()
         self._generate_waveforms()
 
         # collapse all xy pulses to one waveform if no local XY control
@@ -865,6 +866,38 @@ class SequenceToWaveforms:
                         gate.gate.phi += phase
                         # Need to recomput the pulse
                         gate.pulse = self._get_pulse_for_gate(gate)
+
+
+
+    def _perform_virtual_z_iswap(self):
+        # log.info('_perform_virtual_z_iswap')
+        arr_phase = np.zeros(self.n_qubit) # only works for two-qubit system
+        for step in self.sequence_list:
+            for gate in step.gates:
+                for qubit in range(self.n_qubit):
+                    gate_obj = None
+
+                    # log.info('qubit: {}, gate: {}'.format(qubit, str(gate)))
+                    if qubit == gate.qubit:  # TODO Allow for 2 qb
+                        gate_obj = gate.gate
+                    if isinstance(gate_obj, gates.ZGate_Cplr_iSWAP):
+                        # swap 0 <-> 2
+                        temp = arr_phase[0]
+                        arr_phase[0] = arr_phase[2]
+                        arr_phase[2] = temp
+                        # log.info('SWAP the phase')
+                    if isinstance(gate_obj, gates.VirtualZGate):
+                        arr_phase[qubit] += gate_obj.theta
+                        # log.info('arr_phase[{}]: {}'.format(qubit,arr_phase[qubit]))
+                    if (isinstance(gate_obj, gates.SingleQubitXYRotation)):
+                            # and arr_phase[qubit] != 0):
+                        gate.gate = copy.copy(gate_obj)
+                        gate.gate.phi += arr_phase[qubit]
+                        # log.info('gate.phi: {}'.format(gate.gate.phi))
+                        # Need to recomput the pulse
+                        gate.pulse = self._get_pulse_for_gate(gate)
+        # log.info('\n')
+
 
     def _add_microwave_gate(self):
         """Create waveform for gating microwave switch."""
