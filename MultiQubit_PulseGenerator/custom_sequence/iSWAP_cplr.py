@@ -31,6 +31,7 @@ class CustomSequence(Sequence):
 			else:
 				self.add_gate(qubit=[0,1,2], gate=gates.iSWAP_Cplr)
 			self.add_gate_to_all(gates.IdentityGate(width = pulse_spacing))
+			# self.add_gate(0, gates.X2p)
 
 if __name__ == '__main__':
 	pass

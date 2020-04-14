@@ -516,11 +516,16 @@ class iSWAP_Cplr_with_1qb_phases(CompositeGate):
         Z rotation angle for qubit 2.
 
     """
-
+    phi_offsets = [0,0,0]
+    def set_phase_offsets(self, phi_offsets):
+        self.phi_offsets = phi_offsets
     def __init__(self, phi1, phi2, polarity):
         super().__init__(n_qubit=3, name = 'iSWAP_Cplr')
+        # log.info('with virtual z')
+        # self.add_gate([VirtualZGate(np.pi), IdentityGate(width = 0), VirtualZGate(np.pi)]) # due to negative g
         self.add_gate([IdentityGate(width = 0), ZGate_Cplr_iSWAP(), ZGate_TQB_iSWAP()])
         self.add_gate([VirtualZGate(phi1), IdentityGate(width = 0), VirtualZGate(phi2)])
+
 
     def new_angles(self, phi1, phi2, polarity):
         """Update the angles of the single qubit rotations.
@@ -561,6 +566,9 @@ class CZ_Cplr_with_1qb_phases(CompositeGate):
 
         self.add_gate([VirtualZGate(phi1), IdentityGate(width = 0), VirtualZGate(phi2)])
 
+    phi_offsets = [0,0,0]
+    def set_phase_offsets(self, phi_offsets):
+        self.phi_offsets = phi_offsets
     def new_angles(self, phi1, phi2, polarity):
         """Update the angles of the single qubit rotations.
 

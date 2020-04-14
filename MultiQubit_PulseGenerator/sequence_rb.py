@@ -501,7 +501,7 @@ class SingleQubit_RB(Sequence):
         write_seq = config.get('Write sequence as txt file', False)
 
         # log.info('Assign seed %d' %(rnd_seed))
-        rnd.seed(rnd_seed)
+        rnd.seed(rnd_seed + N_cliffords*100)
         if interleave is True:
             interleaved_gate = config['Interleaved 1-QB Gate']
         else:
@@ -724,7 +724,8 @@ class TwoQubit_RB(Sequence):
                 int(config['Qubits to Benchmark (Coupler)'][2]) - 1,
                 int(config['Qubits to Benchmark (Coupler)'][4]) - 1,] 
 
-        rnd.seed(rnd_seed)
+        rnd.seed(rnd_seed + N_cliffords*100)
+        log.info('change the seeding')
         if interleave is True:
             interleaved_gate = config['Interleaved 2-QB Gate']
         else:
@@ -762,6 +763,7 @@ class TwoQubit_RB(Sequence):
                 if interleave is True:
                     self.prev_interleaved_gate = interleaved_gate
                     if interleaved_gate == 'CZ':
+                        log.interle
                         cliffordSeq1.append(gates.I)
                         cliffordSeq2.append(gates.CZ)
                     elif interleaved_gate == 'CZEcho':
@@ -917,10 +919,16 @@ class TwoQubit_RB(Sequence):
                 # for i in range(self.n_qubit - qubits_to_benchmark[1]):
                 #     multi_gate_seq.append([None] * len(gate_seq_1))
             elif (generator in ['iSWAP_Cplr', 'CZ_Cplr']):
-                multi_gate_seq.append(gateSeq2)
-                multi_gate_seq.append(gateSeqCplr)
-                multi_gate_seq.append(gateSeq1)
+                # multi_gate_seq.append(gateSeq2)
+                # multi_gate_seq.append(gateSeqCplr)
+                # multi_gate_seq.append(gateSeq1)
 
+                log.info('\n\n')
+                log.info('SWAP THE ORDER!')
+                log.info('\n\n')
+                multi_gate_seq.append(gateSeq1)
+                multi_gate_seq.append(gateSeqCplr)
+                multi_gate_seq.append(gateSeq2)
             # multi_gate_seq.append(gateSeq2)
             # multi_gate_seq.append(gateSeq1)
             # for i in range(self.n_qubit - qubits_to_benchmark[1]):
@@ -1316,7 +1324,7 @@ class TwoQubit_XEB(Sequence):
                 int(config['Qubits to Benchmark (Coupler)'][4]) - 1,] 
 
 
-        rnd.seed(rnd_seed)
+        rnd.seed(rnd_seed + N_cliffords*100)
 
         # generate new randomized clifford gates only if configuration changes
         if (self.prev_sequence != sequence or
@@ -1369,6 +1377,9 @@ class TwoQubit_XEB(Sequence):
                 multi_gate_seq.append(gateSeq1)
                 multi_gate_seq.append(gateSeq2)
             elif (generator in ['iSWAP_Cplr', 'CZ_Cplr', 'I']):
+                log.info('\n\n')
+                log.info('SWAP THE ORDER!')
+                log.info('\n\n')
                 multi_gate_seq.append(gateSeq1)
                 multi_gate_seq.append(gateSeqCplr)
                 multi_gate_seq.append(gateSeq2)
