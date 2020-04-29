@@ -153,6 +153,7 @@ def add_singleQ_clifford(index, gate_seq, pad_with_I=True):
 
 def add_twoQ_clifford(index, gate_seq_1, gate_seq_2, gate_seq_Cplr = [], generator = 'CZ'):
     """Add single qubit clifford (11520 = 576 + 5184 + 5184 + 576)."""
+    log.info('index num: %d'%(index))
     if (index < 0):
         raise ValueError(
             'index is out of range. it should be smaller than 11520 and '
@@ -724,8 +725,8 @@ class TwoQubit_RB(Sequence):
                 int(config['Qubits to Benchmark (Coupler)'][2]) - 1,
                 int(config['Qubits to Benchmark (Coupler)'][4]) - 1,] 
 
-        rnd.seed(rnd_seed + N_cliffords*100)
-        log.info('change the seeding')
+        # rnd.seed(rnd_seed + N_cliffords*100)
+        rnd.seed(rnd_seed)
         if interleave is True:
             interleaved_gate = config['Interleaved 2-QB Gate']
         else:
@@ -1324,7 +1325,8 @@ class TwoQubit_XEB(Sequence):
                 int(config['Qubits to Benchmark (Coupler)'][4]) - 1,] 
 
 
-        rnd.seed(rnd_seed + N_cliffords*100)
+        rnd.seed(rnd_seed + N_cycles*100)
+        log.info('rnd_seed: %d'%(rnd_seed + N_cycles*100))
 
         # generate new randomized clifford gates only if configuration changes
         if (self.prev_sequence != sequence or

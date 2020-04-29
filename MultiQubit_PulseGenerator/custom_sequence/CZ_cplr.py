@@ -32,8 +32,12 @@ class CustomSequence(Sequence):
 					self.add_gate(qubit=[0,1,2], gate = gates.CZ_Cplr_opposite)
 			else:
 				self.add_gate(qubit=[0,1,2], gate=gates.CZ_Cplr)
-			self.add_gate_to_all(gates.IdentityGate(width = pulse_spacing))
-			
+
+			if ((i < num_CZ_pulses - 1) or (num_CZ_pulses == 1)):
+				self.add_gate_to_all(gates.IdentityGate(width = pulse_spacing))
+			else:
+				pass
+
 		# pass
 if __name__ == '__main__':
 	pass

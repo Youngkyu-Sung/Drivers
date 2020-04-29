@@ -212,15 +212,21 @@ class Driver(LabberDriver):
                     value = self.waveforms['xy'][n].imag
                 else:
                     value = self.waveforms['xy'][n].real
+                # if quant.name[-1] == '2':
+                #     value = self.waveforms['xy'][0].real + self.waveforms['xy'][2].real
             elif name == 'Trace - Q':
                 if self.getValue('Swap IQ'):
                     value = self.waveforms['xy'][n].real
                 else:
                     value = self.waveforms['xy'][n].imag
+                # if quant.name[-1] == '2':
+                #     value = self.waveforms['xy'][0].imag + self.waveforms['xy'][2].imag
             elif name == 'Trace - Z':
                 value = self.waveforms['z'][n]
             elif name == 'Trace - G':
                 value = self.waveforms['gate'][n]
+                # if quant.name[-1] == '2':
+                #     value = np.clip(self.waveforms['gate'][0]+ self.waveforms['gate'][2], a_min=  0, a_max = 1)
 
         elif quant.name == 'Trace - Readout trig':
             value = self.waveforms['readout_trig']
