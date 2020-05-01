@@ -37,7 +37,7 @@ class CustomSequence(Sequence):
 				self.add_gate_to_all(gates.IdentityGate(width = pulse_spacing))
 			else:
 				pass
-
-		# pass
+				
+# 		# pass
 if __name__ == '__main__':
 	pass

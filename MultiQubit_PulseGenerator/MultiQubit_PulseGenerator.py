@@ -39,6 +39,7 @@ class Driver(LabberDriver):
         name = self.getValue('Sequence')
         self.sendValueToOther('Sequence', name)
 
+        self.qb_flux_volts = np.linspace(-1.5,1.5,3001)
     def performSetValue(self, quant, value, sweepRate=0.0, options={}):
         """Perform the Set Value instrument operation."""
         # only do something here if changing the sequence type
@@ -173,7 +174,6 @@ class Driver(LabberDriver):
                                 else:
                                     data[m][:len(call[key][n])] = call[key][n]
                             self.waveforms[key].append(data)
-
                     # same for readout waveforms
                     for key in ['readout_trig', 'readout_iq']:
                         length = max([len(call[key]) for call in calls])
@@ -191,8 +191,15 @@ class Driver(LabberDriver):
                     # log.info('generating case 2')
                     self.waveforms = self.sequence_to_waveforms.get_waveforms(
                         self.sequence.get_sequence(config))
+
+                    # get correct data from waveforms stored in memory
+                    self.qb_spectra = np.zeros((self.sequence.n_qubit, len(self.qb_flux_volts)))
+                    for n in range(self.sequence.n_qubit):
+                        if n == 1 and self.sequence_to_waveforms.qubits[n] is not None:
+                            # log.info('Generating spectro for qubit {}'.format(n))
+                            self.qb_spectra[n] =  self.sequence_to_waveforms.qubits[n].V_to_f(self.qb_flux_volts)
+
                     # log.info('Z waveform max: {}'.format(np.max(self.waveforms['z'])))
-            # get correct data from waveforms stored in memory
             value = self.getWaveformFromMemory(quant)
         else:
             # for all other cases, do nothing
@@ -228,6 +235,10 @@ class Driver(LabberDriver):
                 # if quant.name[-1] == '2':
                 #     value = np.clip(self.waveforms['gate'][0]+ self.waveforms['gate'][2], a_min=  0, a_max = 1)
 
+            elif name == 'Trace - QB Spectra':
+                value = self.qb_spectra[n]
+                value = quant.getTraceDict(value, x = self.qb_flux_volts)
+                return value
         elif quant.name == 'Trace - Readout trig':
             value = self.waveforms['readout_trig']
         elif quant.name == 'Trace - Readout I':

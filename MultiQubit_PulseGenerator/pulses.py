@@ -320,6 +320,103 @@ class Cosine(Pulse):
 
         return values
 
+class Optimal(Pulse):
+    # For optimal coupler pulse
+    def __init__(self, *args, **kwargs):
+        super().__init__(False)
+        self.F_terms = 2
+        self.Hx = 0.07e9 # (Hz)
+        self.init_Hz = 0.725e9 # (Hz)
+        self.final_Hz = 0.1e9 # (Hz)
+        self.Hz_offset = 4.164e9 # (Hz)
+        self.F_coeffs = np.array([1.0866, -0.0866])
+        self.t_tau = None
+
+    def total_duration(self):
+        return self.width+self.plateau
+
+
+    def calculate_envelope(self, t0, t):
+        if self.t_tau is None:
+            self.calculate_optimal_waveform()
+
+        # Plateau is added as an extra extension of theta_f.
+        theta_t = np.ones(len(t)) * self.theta_i
+        for i in range(len(t)):
+            if 0 < (t[i] - t0 + self.plateau / 2) < self.plateau:
+                theta_t[i] = self.theta_f
+            elif (0 < (t[i] - t0 + self.width / 2 + self.plateau / 2) <
+                  (self.width + self.plateau) / 2):
+                theta_t[i] = np.interp(
+                    t[i] - t0 + self.width / 2 + self.plateau / 2, self.t_tau,
+                    self.theta_tau)
+
+            elif (0 < (t[i] - t0 + self.width / 2 + self.plateau / 2) <
+                  (self.width + self.plateau)):
+                theta_t[i] = np.interp(
+                    t[i] - t0 + self.width / 2 - self.plateau / 2, self.t_tau,
+                    self.theta_tau)
+
+        df = 2*self.Hx * (1 / np.tan(theta_t) - 1 / np.tan(self.theta_i))
+
+        if self.qubit is None:
+            # Use linear dependence if no qubit was given
+            # log.info('---> df (linear): ' +str(df))
+            values = df / self.dfdV
+            # values = theta_t
+        else:
+            values = self.qubit.df_to_dV(df)
+
+        if self.negative_amplitude is True:
+            values = -values
+
+        return values
+
+    def calculate_optimal_waveform(self):
+        # calculate initial & final angles.
+        self.theta_i = np.arctan(self.Hx / self.init_Hz)
+        if self.final_Hz == 0:
+            self.theta_f = np.pi *0.5
+        else:
+            self.theta_f = np.arctan(self.Hx / self.final_Hz)  
+
+        if self.theta_f < 0:
+            self.theta_f = self.theta_f + np.pi
+                
+        # # Renormalize fourier coefficients to initial and final angles
+        normalize_const = (self.theta_f - self.theta_i) / 2 
+        sum_even_coeffs = np.sum(self.F_coeffs[range(0, self.F_terms, 2)])
+        for i in range(len(self.F_coeffs)):
+            self.F_coeffs[i] = self.F_coeffs[i] * (normalize_const / sum_even_coeffs)
+            
+        # defining helper variables
+        n = np.arange(1, self.F_terms + 1, 1)
+        n_points = 1000  # Number of points in the numerical integration
+
+        # Calculate pulse width in tau variable - See paper for details
+        tau = np.linspace(0, 1, n_points)
+        self.theta_tau = np.zeros(n_points)
+        # This corresponds to the sum in Eq. (15) in Martinis & Geller
+        for i in range(n_points):
+            self.theta_tau[i] = (
+                np.sum(self.F_coeffs * (1 - np.cos(2 * np.pi * n * tau[i]))) +
+                self.theta_i)
+
+        _t_tau = np.trapz(np.sin(self.theta_tau), x=tau)
+
+        # Find the width in units of tau:
+        Width_tau = self.width / _t_tau
+
+        # Calculating time as functions of tau
+        # we normalize to width_tau (calculated above)
+        tau = np.linspace(0, Width_tau, n_points)
+        self.t_tau = np.zeros(n_points)
+
+        for i in range(n_points):
+            if i > 0:
+                self.t_tau[i] = np.trapz(
+                    np.sin(self.theta_tau[0:i+1]), x=tau[0:i+1])
+
 
 class CZ(Pulse):
     def __init__(self, *args, **kwargs):

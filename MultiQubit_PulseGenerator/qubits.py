@@ -106,43 +106,44 @@ class Transmon(Qubit):
 
     def f_to_V(self, f):  # noqa 102
         # Make sure frequencies are inside the possible frequency range
+        log.info('f: {} (Hz), f01_max: {} (Hz), f01_min: {} (Hz)'.format(f, self.f01_max, self.f01_min))
         if np.any(f > self.f01_max):
             raise ValueError(
-                'Frequency requested is outside the qubit spectrum')
+                'Frequency requested is outside the qubit spectrum.')
         if np.any(f < self.f01_min):
             raise ValueError(
-                'Frequency requested is outside the qubit spectrum')
+                'Frequency requested is outside the qubit spectrum.')
 
         # Calculate the required EJ for the given frequencies
         # f01 = sqrt(8*EJ*Ec) - Ec --> EJ = (f01+Ec)**2 / (8*Ec)
         EJ = (f + self.Ec)**2 / (8 * self.Ec)
         log.info('Ej: ' + str(EJ))
         # Calculate the F=pi*(V-voffset)/vperiod corresponding to that EJ
-        # EJ = EJ_sum * cos(pi*Phi) * (1+d**2 * tan(pi*Phi)**2)
+        # EJ = EJ_sum * cos(pi*Phi) * sqrt(1+d**2 * tan(pi*Phi)**2)
         # (EJ/EJ_sum))**2 = cos(pi*Phi)**2 + d**2 * sin(pi*Phi)**2 
         # 1 - (EJ/EJ_sum))**2 = (1 - d**2) * sin(pi*Phi)**2
         F = np.arcsin(np.sqrt((EJ**2 / self.EJS**2 - 1) / (self.d**2 - 1)))
-        log.info('Flux: ' + str(EJ))
+        log.info('Flux: ' + str(F/np.pi))
         # And finally the voltage
         V = F * self.Vperiod / np.pi + self.Voffset
 
-        # # Mirror around Voffset, bounding the qubit to one side of the maxima
-        # if self.V0 >= self.Voffset:
-        #     V[V < self.Voffset] = 2 * self.Voffset - V[V < self.Voffset]
-        # else:
-        #     V[V > self.Voffset] = 2 * self.Voffset - V[V > self.Voffset]
+        # Mirror around Voffset, bounding the qubit to one side of the maxima
+        if self.V0 >= self.Voffset:
+            V[V < self.Voffset] = 2 * self.Voffset - V[V < self.Voffset]
+        else:
+            V[V > self.Voffset] = 2 * self.Voffset - V[V > self.Voffset]
 
-        # # Mirror beyond 1 period, bounding the qubit to one side of the minima
-        # Vminp = self.Vperiod / 2 + self.Voffset
-        # Vminn = -self.Vperiod / 2 + self.Voffset
-        # V[V > Vminp] = 2 * Vminp - V[V > Vminp]
-        # V[V < Vminn] = 2 * Vminn - V[V < Vminn]
+        # Mirror beyond 1 period, bounding the qubit to one side of the minima
+        Vminp = self.Vperiod / 2 + self.Voffset
+        Vminn = -self.Vperiod / 2 + self.Voffset
+        V[V > Vminp] = 2 * Vminp - V[V > Vminp]
+        V[V < Vminn] = 2 * Vminn - V[V < Vminn]
 
         return V
 
     def df_to_dV(self, df):  # noqa 102
         f0 = self.V_to_f(self.V0)
-        # log.info('---> f0: ' + str(f0))
-        # log.info('--> df: ' + str(df))
-        # log.info('--> df + f0: ' + str(df+f0))
+        log.info('---> f0: ' + str(f0))
+        log.info('--> df: ' + str(df))
+        log.info('--> df + f0: ' + str(df+f0))
         return self.f_to_V(df + f0) - self.V0
