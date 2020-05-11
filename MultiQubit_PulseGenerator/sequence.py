@@ -639,10 +639,10 @@ class SequenceToWaveforms:
         if self.perform_predistortion:
             self._predistort_xy_waveforms()
         if self.perform_predistortion_z:
-            self._predistort_z_waveforms()
-
             # compensate predistortion for z pulses
             self._wave_z[2] += self._predistortions_z2_z3.compensate(self._wave_z[1])
+            self._predistort_z_waveforms()
+
         if self.readout_trig_generate:
             self._add_readout_trig()
         if self.generate_gate_switch:

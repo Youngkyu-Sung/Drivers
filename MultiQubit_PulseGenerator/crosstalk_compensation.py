@@ -59,20 +59,22 @@ class Crosstalk_Compensation(object):
         Y = np.fft.rfft(padded, norm='ortho')
 
         omega = 2 * np.pi * np.fft.rfftfreq(len(padded), self.dt)
-        H = (1 +
-             (1j * self.A1 * omega * self.tau1) /
+        H = (
+             (self.A1) /
              (1j * omega * self.tau1 + 1) +
-             (1j * self.A2 * omega * self.tau2) /
+             (self.A2) /
              (1j * omega * self.tau2 + 1) +
-             (1j * self.A3 * omega * self.tau3) /
+             (self.A3) /
              (1j * omega * self.tau3 + 1) +
-             (1j * self.A4 * omega * self.tau4) /
+             (self.A4) /
              (1j * omega * self.tau4 + 1) +
-             (1j * self.A5 * omega * self.tau5) /
+             (self.A5) /
              (1j * omega * self.tau5 + 1) +
-             (1j * self.A6 * omega * self.tau6) /
-             (1j * omega * self.tau6 + 1))
+             (self.A6) /
+             (1j * omega * self.tau6 + 1)
+             )
+
         Yc = H * Y
 
-        yc = np.fft.irfft(Yc, norm='ortho')[:len(waveform)] - waveform
+        yc = np.fft.irfft(Yc, norm='ortho')[:len(waveform)]# - waveform
         return yc
