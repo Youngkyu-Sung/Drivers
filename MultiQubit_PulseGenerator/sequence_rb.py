@@ -725,8 +725,8 @@ class TwoQubit_RB(Sequence):
                 int(config['Qubits to Benchmark (Coupler)'][2]) - 1,
                 int(config['Qubits to Benchmark (Coupler)'][4]) - 1,] 
 
-        # rnd.seed(rnd_seed + N_cliffords*100)
-        rnd.seed(rnd_seed)
+        rnd.seed(rnd_seed + N_cliffords*100)
+        # rnd.seed(rnd_seed)
         if interleave is True:
             interleaved_gate = config['Interleaved 2-QB Gate']
         else:
@@ -764,7 +764,6 @@ class TwoQubit_RB(Sequence):
                 if interleave is True:
                     self.prev_interleaved_gate = interleaved_gate
                     if interleaved_gate == 'CZ':
-                        log.interle
                         cliffordSeq1.append(gates.I)
                         cliffordSeq2.append(gates.CZ)
                     elif interleaved_gate == 'CZEcho':
@@ -925,11 +924,11 @@ class TwoQubit_RB(Sequence):
                 # multi_gate_seq.append(gateSeq1)
 
                 log.info('\n\n')
-                log.info('SWAP THE ORDER!')
+                log.info('SWAP THE ORDER to use better 1QB gate (QB1 is better than QB 2)!')
                 log.info('\n\n')
-                multi_gate_seq.append(gateSeq1)
-                multi_gate_seq.append(gateSeqCplr)
                 multi_gate_seq.append(gateSeq2)
+                multi_gate_seq.append(gateSeqCplr)
+                multi_gate_seq.append(gateSeq1)
             # multi_gate_seq.append(gateSeq2)
             # multi_gate_seq.append(gateSeq1)
             # for i in range(self.n_qubit - qubits_to_benchmark[1]):
