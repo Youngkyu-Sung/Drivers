@@ -10,6 +10,7 @@ import pulses
 import qubits
 import readout
 import tomography
+import crosstalk_compensation
 
 import dill as pickle
 import os
@@ -555,6 +556,8 @@ class SequenceToWaveforms:
             for n in range(self.n_qubit)
         ]
 
+        self._predistortions_z2_z3 = crosstalk_compensation.Crosstalk_Compensation("2-3")
+        
         # gate switch waveform
         self.generate_gate_switch = False
         self.uniform_gate = False
@@ -637,6 +640,9 @@ class SequenceToWaveforms:
             self._predistort_xy_waveforms()
         if self.perform_predistortion_z:
             self._predistort_z_waveforms()
+
+            # compensate predistortion for z pulses
+            self._wave_z[2] += self._predistortions_z2_z3.compensate(self._wave_z[1])
         if self.readout_trig_generate:
             self._add_readout_trig()
         if self.generate_gate_switch:
@@ -783,6 +789,7 @@ class SequenceToWaveforms:
         for n in range(self.n_qubit):
             self._wave_z[n] = self._predistortions_z[n].predistort(
                 self._wave_z[n])
+
 
     def _perform_crosstalk_compensation(self):
         """Compensate for Z-control crosstalk."""
@@ -1642,10 +1649,14 @@ class SequenceToWaveforms:
         for p in self._predistortions:
             p.set_parameters(config)
 
+
         # Z predistortion
         self.perform_predistortion_z = config.get('Predistort Z')
         for p in self._predistortions_z:
             p.set_parameters(config)
+
+        # predistortion for Z crosstalk-compensation
+        self._predistortions_z2_z3.set_parameters(config)
 
         # crosstalk
         self.compensate_crosstalk = config.get('Compensate cross-talk', False)
