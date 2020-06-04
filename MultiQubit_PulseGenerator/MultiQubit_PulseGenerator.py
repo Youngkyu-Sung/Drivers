@@ -40,9 +40,18 @@ class Driver(LabberDriver):
         self.sendValueToOther('Sequence', name)
 
         self.qb_flux_volts = np.linspace(-1.5,1.5,3001)
+        self.qb_spectra = np.zeros((10, len(self.qb_flux_volts)))
     def performSetValue(self, quant, value, sweepRate=0.0, options={}):
         """Perform the Set Value instrument operation."""
         # only do something here if changing the sequence type
+        if quant.name == 'Plot Qubit Spectra':
+            # get correct data from waveforms stored in memory
+            self.qb_spectra = np.zeros((self.sequence.n_qubit, len(self.qb_flux_volts)))
+            for n in range(self.sequence.n_qubit):
+                if n == 1 and self.sequence_to_waveforms.qubits[n] is not None:
+                    self.qb_spectra[n] =  self.sequence_to_waveforms.qubits[n].V_to_f(self.qb_flux_volts)
+
+
         if quant.name == 'Sequence':
             # create new sequence if sequence type changed
             new_type = SEQUENCES[value]
@@ -192,12 +201,6 @@ class Driver(LabberDriver):
                     self.waveforms = self.sequence_to_waveforms.get_waveforms(
                         self.sequence.get_sequence(config))
 
-                    # get correct data from waveforms stored in memory
-                    self.qb_spectra = np.zeros((self.sequence.n_qubit, len(self.qb_flux_volts)))
-                    for n in range(self.sequence.n_qubit):
-                        if n == 1 and self.sequence_to_waveforms.qubits[n] is not None:
-                            # log.info('Generating spectro for qubit {}'.format(n))
-                            self.qb_spectra[n] =  self.sequence_to_waveforms.qubits[n].V_to_f(self.qb_flux_volts)
 
                     # log.info('Z waveform max: {}'.format(np.max(self.waveforms['z'])))
             value = self.getWaveformFromMemory(quant)
