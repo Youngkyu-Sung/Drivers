@@ -4,6 +4,7 @@ import numpy as np
 import copy
 
 import crosstalk
+import microwave_crosstalk # to compensate microwave crosstalk (YS)
 import gates
 import predistortion
 import pulses
@@ -547,8 +548,8 @@ class SequenceToWaveforms:
         self._crosstalk = crosstalk.Crosstalk()
 
         # cross-talk
-        self.compensate_uwave_crosstalk = False
-        self._uwave_crosstalk = uwave_crosstalk.Microwave_Crosstalk()
+        self.compensate_microwave_crosstalk = False
+        self._microwave_crosstalk = microwave_crosstalk.Microwave_Crosstalk()
 
         # predistortion
         self.perform_predistortion = False
@@ -795,9 +796,9 @@ class SequenceToWaveforms:
                 self._wave_z[n])
 
 
-    def _perform_crosstalk_compensation(self):
-        """Compensate for Z-control crosstalk."""
-        self._wave_z = self._crosstalk.compensate(self._wave_z)
+    # def _perform_crosstalk_compensation(self):
+    #     """Compensate for Z-control crosstalk."""
+    #     self._wave_z = self._crosstalk.compensate(self._wave_z)
 
     def _explode_composite_gates(self):
         # Loop through the sequence until all CompositeGates are removed
@@ -1163,8 +1164,14 @@ class SequenceToWaveforms:
                     qubit = qubit[0]
                 gate_obj = gate.gate
                 # log.info('-- gate_obj: ' + str(gate_obj))
+                if isinstance(gate_obj, gates.SingleQubitXYRotation):
+                    waveform = self._wave_xy[qubit]
+                    delay = self.wave_xy_delays[qubit]
+                    if self.compensate_microwave_crosstalk:
+                        mw_crosstalk = self._microwave_crosstalk.compensation_matrix[:,
+                                                                        qubit]
 
-                if isinstance(gate_obj,
+                elif isinstance(gate_obj,
                               (gates.IdentityGate, gates.VirtualZGate)):
                     continue
                 elif isinstance(gate_obj, gates.SingleQubitZRotation):
@@ -1281,6 +1288,46 @@ class SequenceToWaveforms:
                         waveform[indices] += (
                             scaling_factor
                             * gate.pulse.calculate_waveform(t0, t))
+
+                elif(self.compensate_microwave_crosstalk and
+                    isinstance(gate_obj, 
+                            (gates.SingleQubitXYRotation))):
+                    for q in range(self.n_qubit):
+                        waveform = self._wave_xy[q]
+                        delay = self.wave_xy_delays[q]
+                        start = self._round(step.t_start + delay)
+                        end = self._round(step.t_end + delay)
+                        indices = np.arange(
+                            max(np.floor(start * self.sample_rate), 0),
+                            min(
+                                np.ceil(end * self.sample_rate),
+                                len(waveform)),
+                            dtype=int)
+
+                        # return directly if no indices
+                        if len(indices) == 0:
+                            continue
+
+                        # calculate time values for the pulse indices
+                        t = indices / self.sample_rate
+                        max_duration = end - start
+                        middle = end - max_duration / 2
+                        if step.align == 'center':
+                            t0 = middle
+                        elif step.align == 'left':
+                            t0 = middle - (max_duration - gate.duration) / 2
+                        elif step.align == 'right':
+                            t0 = middle + (max_duration - gate.duration) / 2
+
+                        # log.info('mw_crosstalk: {}'.format(mw_crosstalk))
+                        scaling_factor = (mw_crosstalk[q])
+                        if q != qubit:
+                            scaling_factor = scaling_factor
+                        log.info('mw crosstalk scaling_factor: {}'.format(scaling_factor))
+                        waveform[indices] += (
+                            scaling_factor
+                            * gate.pulse.calculate_waveform(t0, t))
+
                 else:
                     # calculate the pulse waveform for the selected indices
                     indices = np.arange(
@@ -1675,6 +1722,10 @@ class SequenceToWaveforms:
         # crosstalk
         self.compensate_crosstalk = config.get('Compensate cross-talk', False)
         self._crosstalk.set_parameters(config)
+
+        # microwave-crosstalk
+        self.compensate_microwave_crosstalk = config.get('Compensate microwave cross-talk', False)
+        self._microwave_crosstalk.set_parameters(config)
 
         # gate switch waveform
         self.generate_gate_switch = config.get('Generate gate')
