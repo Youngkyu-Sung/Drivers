@@ -546,6 +546,10 @@ class SequenceToWaveforms:
         self.compensate_crosstalk = False
         self._crosstalk = crosstalk.Crosstalk()
 
+        # cross-talk
+        self.compensate_uwave_crosstalk = False
+        self._uwave_crosstalk = uwave_crosstalk.Microwave_Crosstalk()
+
         # predistortion
         self.perform_predistortion = False
         self._predistortions = [
@@ -877,7 +881,7 @@ class SequenceToWaveforms:
 
 
     def _perform_virtual_z_iswap(self):
-        # log.info('_perform_virtual_z_iswap')
+        log.info('_perform_virtual_z_iswap, n_qubit: {}'.format(self.n_qubit))
         arr_phase = np.zeros(self.n_qubit) # only works for two-qubit system
         arr_phase_offset = np.zeros(self.n_qubit) # only works for two-qubit system
         num_iswap = 0
@@ -888,18 +892,22 @@ class SequenceToWaveforms:
 
                     if qubit == gate.qubit:  # TODO Allow for 2 qb
                         gate_obj = gate.gate
-                        log.info('qubit: {}, gate: {}'.format(qubit, str(gate)))
+                        # log.info('qubit: {}, gate: {}'.format(qubit, str(gate)))
                     if isinstance(gate_obj, gates.ZGate_Cplr_iSWAP):
-                        # swap 0 <-> 2
+                        # # swap 0 <-> 2
                         # temp = arr_phase[0]
                         # arr_phase[0] = arr_phase[2]
                         # arr_phase[2] = temp
-                        # log.info('hi!!!')
                         num_iswap +=1
-                        log.info('num_iswap: {}'.format(num_iswap))
+                        # log.info('num_iswap: {}, qubit: {}'.format(num_iswap, qubit))
+                        # log.info('arr_phase_swapped!')
                         # log.info('Phase offset for QBs: {}'.format( gates.iSWAP_Cplr.phi_offsets))
-                        arr_phase_offset = gates.iSWAP_Cplr.phi_offsets
-
+                        # arr_phase_offset = gates.iSWAP_Cplr.phi_offsets
+                        # if qubit == 0:
+                        arr_phase[0] += gates.iSWAP_Cplr.phi1_Symm
+                        arr_phase[2] += gates.iSWAP_Cplr.phi2_Symm
+                            # log.info('add arr_phase[{}]: {}'.format(qubit, num_iswap))
+                        # elif qubit == 2:
 
                     if isinstance(gate_obj, gates.VirtualZGate):
                         arr_phase[qubit] += gate_obj.theta
@@ -908,9 +916,13 @@ class SequenceToWaveforms:
                             # and arr_phase[qubit] != 0):
                         gate.gate = copy.copy(gate_obj)
                         gate.gate.phi += arr_phase[qubit]
-                        if num_iswap % 2 == 1:
-                            log.info('Add Phase offset for QB{}, {}, {}'.format(qubit, gate, arr_phase_offset[qubit]))
-                            gate.gate.phi += arr_phase_offset[qubit]
+                        asymm_part = 0
+                        if qubit == 0:
+                            asymm_part = np.floor(num_iswap*0.5)*(gates.iSWAP_Cplr.phi1_Asymm + gates.iSWAP_Cplr.phi2_Asymm) + np.floor(num_iswap%2*0.5 + 0.5)*gates.iSWAP_Cplr.phi1_Asymm
+                        elif qubit == 2:
+                            asymm_part = np.floor(num_iswap*0.5)*(gates.iSWAP_Cplr.phi1_Asymm + gates.iSWAP_Cplr.phi2_Asymm) + np.floor(num_iswap%2*0.5 + 0.5)*gates.iSWAP_Cplr.phi2_Asymm
+                        gate.gate.phi += asymm_part   
+                        log.info('Number of iSWAP: {}, QB{} -, symm_part: {}, asymm_part:{}'.format(num_iswap, qubit, arr_phase[qubit], asymm_part))# for QB{}, {}, {}'.format(qubit, gate, arr_phase_offset[qubit]))
                         gate.pulse = self._get_pulse_for_gate(gate)
                         
 
@@ -1626,11 +1638,13 @@ class SequenceToWaveforms:
             self.pulses_CZ_tqb_opposite[i] = self._swap_pulse_polarity(self.pulses_CZ_tqb[i])
 
         gates.iSWAP_Cplr.new_angles(
-            config.get('FQB Phi, 2QB (iSWAP, Cplr, 1-2)'), config.get('TQB Phi, 2QB (iSWAP, Cplr, 1-2)'), polarity = 'positive')
-        gates.iSWAP_Cplr.set_phase_offsets(
-            [config.get('FQB Phi Offset, 2QB (iSWAP, Cplr, 1-2)'), 
-            0, 
-            config.get('TQB Phi Offset, 2QB (iSWAP, Cplr, 1-2)')])
+            config.get('FQB Phi Symm, 2QB (iSWAP, Cplr, 1-2)'), config.get('TQB Phi Symm, 2QB (iSWAP, Cplr, 1-2)'),
+                config.get('FQB Phi Asymm, 2QB (iSWAP, Cplr, 1-2)'), config.get('TQB Phi Asymm, 2QB (iSWAP, Cplr, 1-2)'),
+                        polarity = 'positive')
+        # gates.iSWAP_Cplr.set_phase_offsets(
+        #     [config.get('FQB Phi Offset, 2QB (iSWAP, Cplr, 1-2)'), 
+        #     0, 
+        #     config.get('TQB Phi Offset, 2QB (iSWAP, Cplr, 1-2)')])
         
         gates.CZ_Cplr.new_angles(
             config.get('FQB Phi, 2QB (CZ, Cplr, 1-2)'), config.get('TQB Phi, 2QB (CZ, Cplr, 1-2)'), polarity = 'positive')

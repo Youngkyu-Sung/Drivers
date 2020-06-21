@@ -516,18 +516,21 @@ class iSWAP_Cplr_with_1qb_phases(CompositeGate):
         Z rotation angle for qubit 2.
 
     """
-    phi_offsets = [0,0,0]
-    def set_phase_offsets(self, phi_offsets):
-        self.phi_offsets = phi_offsets
-    def __init__(self, phi1, phi2, polarity):
+    def __init__(self, phi1_Symm, phi2_Symm, phi1_Asymm, phi2_Asymm, polarity):
         super().__init__(n_qubit=3, name = 'iSWAP_Cplr')
         # log.info('with virtual z')
         # self.add_gate([VirtualZGate(np.pi), IdentityGate(width = 0), VirtualZGate(np.pi)]) # due to negative g
+        self.phi1_Symm = phi1_Symm
+        self.phi2_Symm = phi2_Symm
+        self.phi1_Asymm = phi1_Asymm
+        self.phi2_Asymm = phi2_Asymm
+        
         self.add_gate([IdentityGate(width = 0), ZGate_Cplr_iSWAP(), ZGate_TQB_iSWAP()])
-        self.add_gate([VirtualZGate(phi1), IdentityGate(width = 0), VirtualZGate(phi2)])
+        # self.add_gate([VirtualZGate(phi1_Symm), IdentityGate(width = 0), VirtualZGate(phi2_Symm)])
+        # self.add_gate([VirtualZGate(phi1_Asymm), IdentityGate(width = 0), VirtualZGate(phi2_Asymm)])
 
 
-    def new_angles(self, phi1, phi2, polarity):
+    def new_angles(self, phi1_Symm, phi2_Symm, phi1_Asymm, phi2_Asymm, polarity):
         """Update the angles of the single qubit rotations.
 
         Parameters
@@ -538,7 +541,7 @@ class iSWAP_Cplr_with_1qb_phases(CompositeGate):
             Z rotation angle for qubit 2.
 
         """
-        self.__init__(phi1, phi2, polarity)
+        self.__init__(phi1_Symm, phi2_Symm, phi1_Asymm, phi2_Asymm, polarity)
 
     def __str__(self):
         return "iSWAP_Cplr"
@@ -662,8 +665,8 @@ CNOT.add_gate(H, 1)
 CNOT.add_gate(CZ, [0, 1])
 CNOT.add_gate(H, 1)
 
-iSWAP_Cplr = iSWAP_Cplr_with_1qb_phases(0, 0, polarity = 'positive') # start with 0, 0 as the single qubit phase shifts
-iSWAP_Cplr_opposite = iSWAP_Cplr_with_1qb_phases(0, 0, polarity = 'negative') # start with 0, 0 as the single qubit phase shifts
+iSWAP_Cplr = iSWAP_Cplr_with_1qb_phases(0, 0, 0, 0, polarity = 'positive') # start with 0, 0 as the single qubit phase shifts
+iSWAP_Cplr_opposite = iSWAP_Cplr_with_1qb_phases(0, 0, 0, 0, polarity = 'negative') # start with 0, 0 as the single qubit phase shifts
 
 CZ_Cplr = CZ_Cplr_with_1qb_phases(0, 0, polarity = 'positive') # start with 0, 0 as the single qubit phase shifts
 CZ_Cplr_opposite = CZ_Cplr_with_1qb_phases(0, 0, polarity = 'negative') # start with 0, 0 as the single qubit phase shifts
