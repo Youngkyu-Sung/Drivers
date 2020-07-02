@@ -525,6 +525,7 @@ class SequenceToWaveforms:
         # log.info('_wave_z initiated to 0s')
         self._wave_z = [np.zeros(0) for n in range(self.n_qubit)]
         self._wave_gate = [np.zeros(0) for n in range(self.n_qubit)]
+        self.phase_offsets = [np.zeros(0) for n in range(self.n_qubit)]
 
         # waveform delays
         self.wave_xy_delays = np.zeros(self.n_qubit)
@@ -629,7 +630,7 @@ class SequenceToWaveforms:
         # self._perform_virtual_z()
         self._perform_virtual_z_iswap()
         self._generate_waveforms()
-
+        
         # collapse all xy pulses to one waveform if no local XY control
         if not self.local_xy:
             # sum all waveforms to first one
@@ -638,6 +639,9 @@ class SequenceToWaveforms:
             for n in range(1, self.n_qubit):
                 self._wave_xy[n][:] = 0.0
 
+        # apply phase offset
+        for n in range(self.n_qubit):
+            self._wave_xy[n] = self._wave_xy[n] * np.exp(1j*self.phase_offsets[n]/180.0*np.pi)
         # log.info('before predistortion, _wave_z max is {}'.format(np.max(self._wave_z)))
         # if self.compensate_crosstalk:
         #     self._perform_crosstalk_compensation()
@@ -656,6 +660,7 @@ class SequenceToWaveforms:
         self._zero_last_z_point()
         # Apply offsets
         self.readout_iq += self.readout_i_offset + 1j * self.readout_q_offset
+
 
         # create and return dictionary with waveforms
         waveforms = dict()
@@ -884,7 +889,6 @@ class SequenceToWaveforms:
     def _perform_virtual_z_iswap(self):
         log.info('_perform_virtual_z_iswap, n_qubit: {}'.format(self.n_qubit))
         arr_phase = np.zeros(self.n_qubit) # only works for two-qubit system
-        arr_phase_offset = np.zeros(self.n_qubit) # only works for two-qubit system
         num_iswap = 0
         for step in self.sequence_list:
             for gate in step.gates:
@@ -899,11 +903,10 @@ class SequenceToWaveforms:
                         # temp = arr_phase[0]
                         # arr_phase[0] = arr_phase[2]
                         # arr_phase[2] = temp
-                        num_iswap +=1
+                        # num_iswap +=1
                         # log.info('num_iswap: {}, qubit: {}'.format(num_iswap, qubit))
                         # log.info('arr_phase_swapped!')
                         # log.info('Phase offset for QBs: {}'.format( gates.iSWAP_Cplr.phi_offsets))
-                        # arr_phase_offset = gates.iSWAP_Cplr.phi_offsets
                         # if qubit == 0:
                         arr_phase[0] += gates.iSWAP_Cplr.phi1_Symm
                         arr_phase[2] += gates.iSWAP_Cplr.phi2_Symm
@@ -923,7 +926,7 @@ class SequenceToWaveforms:
                         elif qubit == 2:
                             asymm_part = np.floor(num_iswap*0.5)*(gates.iSWAP_Cplr.phi1_Asymm + gates.iSWAP_Cplr.phi2_Asymm) + np.floor(num_iswap%2*0.5 + 0.5)*gates.iSWAP_Cplr.phi2_Asymm
                         gate.gate.phi += asymm_part   
-                        log.info('Number of iSWAP: {}, QB{} -, symm_part: {}, asymm_part:{}'.format(num_iswap, qubit, arr_phase[qubit], asymm_part))# for QB{}, {}, {}'.format(qubit, gate, arr_phase_offset[qubit]))
+                        log.info('Number of iSWAP: {}, QB{} -, symm_part: {}, asymm_part:{}'.format(num_iswap, qubit, arr_phase[qubit], asymm_part))
                         gate.pulse = self._get_pulse_for_gate(gate)
                         
 
@@ -1323,7 +1326,7 @@ class SequenceToWaveforms:
                         scaling_factor = (mw_crosstalk[q])
                         if q != qubit:
                             scaling_factor = scaling_factor
-                        log.info('mw crosstalk scaling_factor: {}'.format(scaling_factor))
+                        # log.info('mw crosstalk scaling_factor: {}'.format(scaling_factor))
                         waveform[indices] += (
                             scaling_factor
                             * gate.pulse.calculate_waveform(t0, t))
@@ -1391,6 +1394,10 @@ class SequenceToWaveforms:
         self.trim_start = config.get('Trim both start and end')
         self.align_to_end = config.get('Align pulses to end of waveform')
 
+        for n in range(self.n_qubit):
+            m = n + 1
+            self.phase_offsets[n] = config.get('Phase Offset #{}'.format(m), 0)
+        log.info('self.phase_offsets = {}'.format(self.phase_offsets))
         # qubit spectra
         for n in range(self.n_qubit):
             m = n + 1  # pulses are indexed from 1 in Labber

@@ -49,13 +49,16 @@ class Microwave_Crosstalk(object):
 
         mat_length = np.max(self.Sequence)
         # log.info('mat_length: {}'.format(mat_length))
-        self.compensation_matrix = np.diag(np.ones(mat_length, dtype = complex)) #np.matrix(np.zeros(mat_length, mat_length))
+        self.crosstalk_matrix = np.diag(np.ones(mat_length, dtype = complex)) #np.matrix(np.zeros(mat_length, mat_length))
         # log.info('diag self.mat: {}'.format(self.mat))
 
         for index_r, element_r in enumerate(self.Sequence):
             for index_c, element_c in enumerate(self.Sequence):
-                self.compensation_matrix[element_r - 1, element_c - 1] = \
-                    self.reduced_c_mat[index_r, index_c]
+                self.crosstalk_matrix[element_r - 1, element_c - 1] = \
+                    self.reduced_crosstalk_matrix[index_r, index_c]
+                    
+        self.compensation_matrix = inv(self.crosstalk_matrix)
+        # log.info('self.compensation_matrix: {}'.format(self.compensation_matrix))
         # log.info('self.mat: {}'.format(self.mat))
     def import_crosstalk_matrix(self, config):
         """Import crosstalk matrix data.
@@ -67,12 +70,12 @@ class Microwave_Crosstalk(object):
 
         """
         # store new path
-        C11 = config.get('Microwave CT compensation matrix, C11 mag') * np.exp(1j*config.get('Microwave CT compensation matrix, C11 angle')/180.0*np.pi )
-        C12 = config.get('Microwave CT compensation matrix, C12 mag') * np.exp(1j*config.get('Microwave CT compensation matrix, C12 angle')/180.0*np.pi )
-        C21 = config.get('Microwave CT compensation matrix, C21 mag') * np.exp(1j*config.get('Microwave CT compensation matrix, C21 angle')/180.0*np.pi )
-        C22 = config.get('Microwave CT compensation matrix, C22 mag') * np.exp(1j*config.get('Microwave CT compensation matrix, C22 angle')/180.0*np.pi )
+        C11 = config.get('Microwave CT matrix, C11 mag') * np.exp(1j*config.get('Microwave CT matrix, C11 angle')/180.0*np.pi )
+        C12 = config.get('Microwave CT matrix, C12 mag') * np.exp(1j*config.get('Microwave CT matrix, C12 angle')/180.0*np.pi )
+        C21 = config.get('Microwave CT matrix, C21 mag') * np.exp(1j*config.get('Microwave CT matrix, C21 angle')/180.0*np.pi )
+        C22 = config.get('Microwave CT matrix, C22 mag') * np.exp(1j*config.get('Microwave CT matrix, C22 angle')/180.0*np.pi )
 
-        self.reduced_c_mat = np.matrix([[C11,C12],[C21,C22]])
+        self.reduced_crosstalk_matrix = np.matrix([[C11,C12],[C21,C22]])
         # log.info('microwave crosstalk compensation matrix: {}'.format(self.c_mat))
     def compensate(self, waveforms):
         """Compensate crosstalk on Z-control waveforms.
@@ -88,7 +91,6 @@ class Microwave_Crosstalk(object):
             Waveforms with crosstalk compensation
 
         """
-        # mat_voltage_vs_phi0 = inv(self.phi0_vs_voltage)
 
         wavform_length = len(waveforms[0])
         wavform_num = len(self.Sequence)
