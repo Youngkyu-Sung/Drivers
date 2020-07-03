@@ -247,6 +247,26 @@ class VirtualZGate(OneQubitGate):
             return self.name
 
 
+class EulerZGate(OneQubitGate):
+    """Euler Z Gate."""
+
+    def __init__(self, theta, name=None):
+        self.theta = theta
+        self.name = name
+
+    def __eq__(self, other):
+        threshold = 1e-10
+        if not isinstance(other, VirtualZGate):
+            return False
+        if np.abs(self.theta - other.theta) > threshold:
+            return False
+        return True
+
+    def __str__(self):
+        if self.name is None:
+            return "EulerZ={:+.2f}".format(self.theta)
+        else:
+            return self.name
 class CPHASE(TwoQubitGate):
     """ CPHASE gate. """
 
@@ -505,6 +525,83 @@ class CPHASE_with_1qb_phases(CompositeGate):
     def __str__(self):
         return "CZ"
 
+class iSWAP_Cplr_with_Z_behind(CompositeGate):
+    """
+        iSWAP gate - single qubit Z rotations.
+
+        Parameters
+        ----------
+        phi1 : float
+            Z rotation angle for qubit 1.
+        phi2 : float
+            Z rotation angle for qubit 2.
+        
+    """
+    def __init__(self, phi1, phi2):
+        super().__init__(n_qubit=3, name = 'iSWAP_Cplr')
+        self.phi1 = phi1
+        self.phi2 = phi2
+        self.add_gate([IdentityGate(width = 0), ZGate_Cplr_iSWAP(), ZGate_TQB_iSWAP()])
+        self.add_gate([EulerZGate(self.phi1), IdentityGate(width = 0), EulerZGate(self.phi2)])
+
+
+    def new_angles(self, phi1, phi2):
+        """Update the angles of the single qubit rotations.
+
+        Parameters
+        ----------
+        phi1 : float
+            Z rotation angle for qubit 1.
+        phi2 : float
+            Z rotation angle for qubit 2.
+
+        """
+        self.__init__(phi1, phi2)
+
+    def __str__(self):
+        return "iSWAP_Cplr"
+    def __repr__(self):
+        return self.__str__()
+
+class iSWAP_Cplr_with_Z_ahead(CompositeGate):
+    """
+        single qubit Z rotations - iSWAP
+
+        Parameters
+        ----------
+        phi1 : float
+            Z rotation angle for qubit 1.
+        phi2 : float
+            Z rotation angle for qubit 2.
+
+    """
+    def __init__(self, phi1, phi2):
+        super().__init__(n_qubit=3, name = 'iSWAP_Cplr')
+        self.phi1 = phi1
+        self.phi2 = phi2
+        self.add_gate([EulerZGate(self.phi1), IdentityGate(width = 0), EulerZGate(self.phi2)])
+        self.add_gate([IdentityGate(width = 0), ZGate_Cplr_iSWAP(), ZGate_TQB_iSWAP()])
+
+
+    def new_angles(self, phi1, phi2):
+        """Update the angles of the single qubit rotations.
+
+        Parameters
+        ----------
+        phi1 : float
+            Z rotation angle for qubit 1.
+        phi2 : float
+            Z rotation angle for qubit 2.
+
+        """
+        self.__init__(phi1, phi2)
+
+    def __str__(self):
+        return "iSWAP_Cplr"
+    def __repr__(self):
+        return self.__str__()
+
+
 class iSWAP_Cplr_with_1qb_phases(CompositeGate):
     """iSWAP Coupler gate followed by single qubit Z rotations.
 
@@ -642,6 +739,9 @@ VZ2p = VirtualZGate(np.pi / 2, name='VZ2p')
 VZm = VirtualZGate(-np.pi, name='VZm')
 VZ2m = VirtualZGate(np.pi / 2, name='VZ2m')
 
+# Euler-angle Z gates
+EulerZ = EulerZGate(0, name='EulerZ') 
+
 # two-qubit gates
 CPh = CPHASE()
 
@@ -664,6 +764,11 @@ CNOT = CompositeGate(n_qubit=2, name='CNOT')
 CNOT.add_gate(H, 1)
 CNOT.add_gate(CZ, [0, 1])
 CNOT.add_gate(H, 1)
+
+
+
+iSWAP_Cplr_Z_ahead = iSWAP_Cplr_with_Z_ahead(0, 0) # start with 0, 0 as the single qubit phase shifts
+iSWAP_Cplr_Z_behind = iSWAP_Cplr_with_Z_behind(0, 0) # start with 0, 0 as the single qubit phase shifts
 
 iSWAP_Cplr = iSWAP_Cplr_with_1qb_phases(0, 0, 0, 0, polarity = 'positive') # start with 0, 0 as the single qubit phase shifts
 iSWAP_Cplr_opposite = iSWAP_Cplr_with_1qb_phases(0, 0, 0, 0, polarity = 'negative') # start with 0, 0 as the single qubit phase shifts

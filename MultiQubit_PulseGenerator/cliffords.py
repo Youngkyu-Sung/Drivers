@@ -140,6 +140,10 @@ def Gate_to_strGate(_Gate):
         str_Gate = 'iSWAP_Cplr'
     elif (_Gate == gates.CZ_Cplr):
         str_Gate = 'CZ_Cplr'
+    elif (_Gate == gates.iSWAP_Cplr_Z_ahead):
+        str_Gate = 'iSWAP_Cplr_Z_ahead'
+    elif (_Gate == gates.iSWAP_Cplr_Z_behind):
+        str_Gate = 'iSWAP_Cplr_Z_behind'
 
     return str_Gate
 

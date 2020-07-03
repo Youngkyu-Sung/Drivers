@@ -804,6 +804,9 @@ class SequenceToWaveforms:
     # def _perform_crosstalk_compensation(self):
     #     """Compensate for Z-control crosstalk."""
     #     self._wave_z = self._crosstalk.compensate(self._wave_z)
+    def _convert_z_to_euler_gates(self):
+        for n in len(self.sequence_gate):
+            print(n)
 
     def _explode_composite_gates(self):
         # Loop through the sequence until all CompositeGates are removed
@@ -1695,11 +1698,14 @@ class SequenceToWaveforms:
             config.get('FQB Phi Symm, 2QB (iSWAP, Cplr, 1-2)'), config.get('TQB Phi Symm, 2QB (iSWAP, Cplr, 1-2)'),
                 config.get('FQB Phi Asymm, 2QB (iSWAP, Cplr, 1-2)'), config.get('TQB Phi Asymm, 2QB (iSWAP, Cplr, 1-2)'),
                         polarity = 'positive')
-        # gates.iSWAP_Cplr.set_phase_offsets(
-        #     [config.get('FQB Phi Offset, 2QB (iSWAP, Cplr, 1-2)'), 
-        #     0, 
-        #     config.get('TQB Phi Offset, 2QB (iSWAP, Cplr, 1-2)')])
-        
+
+        # To reduce unnecessary into X&Y Gates as much as possible, we use two different versions of iSWAP gate.
+        iSWAP_Cplr_Z_behind.new_angles(
+            config.get('FQB Phi, 2QB (iSWAP, Cplr, 1-2)'), config.get('TQB Phi, 2QB (iSWAP, Cplr, 1-2)'))
+        iSWAP_Cplr_Z_ahead.new_angles(
+            config.get('TQB Phi, 2QB (iSWAP, Cplr, 1-2)'), config.get('FQB Phi, 2QB (iSWAP, Cplr, 1-2)'))
+
+
         gates.CZ_Cplr.new_angles(
             config.get('FQB Phi, 2QB (CZ, Cplr, 1-2)'), config.get('TQB Phi, 2QB (CZ, Cplr, 1-2)'), polarity = 'positive')
 

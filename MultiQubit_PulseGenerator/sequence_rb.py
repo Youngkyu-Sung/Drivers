@@ -307,7 +307,8 @@ def add_CNOT_like_twoQ_clifford(index, gate_seq_1, gate_seq_2, gate_seq_Cplr = [
         add_singleQ_clifford(index_2, gate_seq_2)
 
         gate_seq_1.append(gates.I)
-        gate_seq_Cplr.append(gates.iSWAP_Cplr)
+        # gate_seq_Cplr.append(gates.iSWAP_Cplr)
+        gate_seq_Cplr.append(gates.iSWAP_Cplr_Z_ahead)
         gate_seq_2.append(gates.I)
 
         gate_seq_1.append(gates.X2p)
@@ -315,7 +316,8 @@ def add_CNOT_like_twoQ_clifford(index, gate_seq_1, gate_seq_2, gate_seq_Cplr = [
         gate_seq_2.append(gates.I)
 
         gate_seq_1.append(gates.I)
-        gate_seq_Cplr.append(gates.iSWAP_Cplr)
+        # gate_seq_Cplr.append(gates.iSWAP_Cplr)
+        gate_seq_Cplr.append(gates.iSWAP_Cplr_Z_behind)
         gate_seq_2.append(gates.I)
 
         add_singleQ_S1(index_3, gate_seq_1)
@@ -380,7 +382,8 @@ def add_iSWAP_like_twoQ_clifford(index, gate_seq_1, gate_seq_2, gate_seq_Cplr = 
         add_singleQ_clifford(index_2, gate_seq_2)
 
         gate_seq_1.append(gates.I)
-        gate_seq_Cplr.append(gates.iSWAP_Cplr)
+        # gate_seq_Cplr.append(gates.iSWAP_Cplr)
+        gate_seq_Cplr.append(gates.iSWAP_Cplr_Z_ahead)
         gate_seq_2.append(gates.I)
 
         add_singleQ_S1(index_3, gate_seq_1)
@@ -457,7 +460,8 @@ def add_SWAP_like_twoQ_clifford(index, gate_seq_1, gate_seq_2, gate_seq_Cplr = [
         add_singleQ_clifford(index_2, gate_seq_2)
 
         gate_seq_1.append(gates.I)
-        gate_seq_Cplr.append(gates.iSWAP_Cplr)
+        # gate_seq_Cplr.append(gates.iSWAP_Cplr)
+        gate_seq_Cplr.append(gates.iSWAP_Cplr_Z_ahead)
         gate_seq_2.append(gates.I)
 
         gate_seq_1.append(gates.I)
@@ -465,7 +469,7 @@ def add_SWAP_like_twoQ_clifford(index, gate_seq_1, gate_seq_2, gate_seq_Cplr = [
         gate_seq_2.append(gates.X2m)
 
         gate_seq_1.append(gates.I)
-        gate_seq_Cplr.append(gates.iSWAP_Cplr)
+        gate_seq_Cplr.append(gates.iSWAP_Cplr_Z_behind)
         gate_seq_2.append(gates.I)
         
         gate_seq_1.append(gates.X2m)
@@ -473,7 +477,8 @@ def add_SWAP_like_twoQ_clifford(index, gate_seq_1, gate_seq_2, gate_seq_Cplr = [
         gate_seq_2.append(gates.I)
 
         gate_seq_1.append(gates.I)
-        gate_seq_Cplr.append(gates.iSWAP_Cplr)
+        # gate_seq_Cplr.append(gates.iSWAP_Cplr)
+        gate_seq_Cplr.append(gates.iSWAP_Cplr_Z_ahead)
         gate_seq_2.append(gates.I)
 
         gate_seq_1.append(gates.I)
@@ -686,6 +691,102 @@ class TwoQubit_RB(Sequence):
     #     super(Sequence, self).__init__(*args, **kwargs)
     #     self.filepath_lookup_table = ""
 
+
+    def _convert_z_to_euler_gates(self):
+        # 1. find where two-qubit gate locates
+        # 2. split sequence into sub-sequence by two qubit gates. Each sub-sequence consisting of only single qubit gates. 
+        # 2. check if Euler Z gate exists in each sub-sequence 
+        # 3. if there is Euler Z, then convert it into the Euler
+
+        # find where 2qb locates
+        list_2qb_gate_indicies = []
+        for n in range(len(self.sequence_list)):
+            step = self.sequence_list[n]
+            if isinstance(step.gates[1].gate, gates.ZGate_Cplr_iSWAP):
+                list_2qb_gate_indicies.append(n)
+
+
+        # split sequence into sub-sequence by two qubit gates. 
+        list_steps_1qb_gates = []
+        for j in range(len(list_2qb_gate_indicies)+1):
+            if j == 0:
+                list_steps_1qb_gates.append(self.sequence_list[:list_2qb_gate_indicies[j]])
+            elif j == len(list_2qb_gate_indicies):
+                list_steps_1qb_gates.append(self.sequence_list[list_2qb_gate_indicies[j-1]+1:])
+            else:
+                list_steps_1qb_gates.append(self.sequence_list[list_2qb_gate_indicies[j-1]+1: list_2qb_gate_indicies[j]])
+        
+        # find which single-qubit group has eulerZ gates
+        list_eulerz_group_indicies = []
+        for k in range(len(list_steps_1qb_gates)):
+            for l in range(len(list_steps_1qb_gates[k])):
+                step = list_steps_1qb_gates[k][l] 
+                if isinstance(step.gates[0].gate, gates.EulerZGate):
+                    list_eulerz_group_indicies.append(k)
+
+
+        print(list_eulerz_group_indicies) 
+
+    def _explode_composite_gates(self):
+        # Loop through the sequence until all CompositeGates are removed
+        # Note that there could be nested CompositeGates
+        n = 0
+        while n < len(self.sequence_list):
+            step = self.sequence_list[n]
+            i = 0
+            while i < len(step.gates):
+                gate = step.gates[i]
+                if isinstance(gate.gate, gates.CompositeGate):
+                    # log.info('In exploded composite, handling composite gate {} at step {}'.format(gate, n))
+                    for m, g in enumerate(gate.gate.sequence):
+                        new_gate = [x.gate for x in g.gates]
+                        # Single gates shouldn't be lists
+                        if len(new_gate) == 1:
+                            new_gate = new_gate[0]
+
+                        # Translate gate qubit number to device qubit number
+                        new_qubit = [x.qubit for x in g.gates]
+                        for j, q in enumerate(new_qubit):
+                            if isinstance(q, int):
+                                if isinstance(gate.qubit, int):
+                                    new_qubit[j] = gate.qubit
+                                    continue
+                                new_qubit[j] = gate.qubit[q]
+                            else:
+                                new_qubit[j] = []
+                                for k in q:
+                                    new_qubit[j].append(gate.qubit[k])
+
+                        # Single qubit shouldn't be lists
+                        if len(new_qubit) == 1:
+                            new_qubit = new_qubit[0]
+                        log.info('In explode composite; modifying {} by adding gate {} at index {}'.format(gate, new_gate, n+m))
+                        log.info('before adding new-qubit(' + str(new_qubit) + ') new-gate (' + str(new_gate) + '): ' + str(self.sequence_list))
+                        self.sequence.add_gate(
+                            copy.copy(new_qubit), copy.copy(new_gate), index=n + m)
+                        log.info('after: ' + str(self.sequence_list))
+
+                    del step.gates[i]
+                    # log.info('In composite gates, removing step {}'.format(i))
+
+                    continue
+                i = i + 1
+            n = n + 1
+
+        # Remove any empty steps where the composite gates were
+        i = 0
+        while i < len(self.sequence_list):
+            step = self.sequence_list[i]
+            # log.info(str(step.gates))
+            if len(step.gates) == 0:
+                # log.info('In composite gates, removing step {}'.format(i))
+                del self.sequence_list[i]
+                continue
+            i = i + 1
+
+        # for i, step in enumerate(self.sequence_list):
+        #     log.info('At end of explode, step {} is {}'.format(i, step.gates))
+
     def generate_sequence(self, config):
         """
         Generate sequence by adding gates/pulses to waveforms.
@@ -775,7 +876,8 @@ class TwoQubit_RB(Sequence):
                     elif interleaved_gate == 'iSWAP_Cplr':
                         gate = gates.iSWAP_Cplr
                         cliffordSeq1.append(gates.I)
-                        cliffordSeqCplr.append(gates.iSWAP_Cplr)
+                        # cliffordSeqCplr.append(gates.iSWAP_Cplr)
+                        cliffordSeqCplr.append(gates.iSWAP_Cplr_Z_behind)
                         cliffordSeq2.append(gates.I)
                     elif interleaved_gate == 'CZ_Cplr':
                         gate = gates.CZ_Cplr
@@ -954,7 +1056,7 @@ class TwoQubit_RB(Sequence):
                         # self.add_gate(qubit=[0, 1], gate=gate_seq)
                         self.add_gate(qubit = qubits_to_benchmark, gate = gate_seq)
                 elif generator == 'iSWAP_Cplr':
-                    if gate_seq[1] == gates.iSWAP_Cplr:
+                    if gate_seq[1] in [gates.iSWAP_Cplr, gates.iSWAP_Cplr_Z_behind, gates.iSWAP_Cplr_Z_ahead]:
                         self.add_gate(qubit=qubits_to_benchmark, gate=gate_seq[1])
                     else:
                         self.add_gate(qubit=qubits_to_benchmark, gate=gate_seq)
@@ -991,7 +1093,8 @@ class TwoQubit_RB(Sequence):
                     else:
                         self.add_gate(qubit=qubits_to_benchmark, gate=gate_seq)
 
-        
+    # def print_sequence(self):
+
     def evaluate_sequence(self, gate_seq_1, gate_seq_2, gate_seq_Cplr = None, generator = 'CZ'):
         """
         Evaluate the two qubit gate sequence.
@@ -1096,7 +1199,6 @@ class TwoQubit_RB(Sequence):
             # twoQ_gate = np.matmul(gate_12, twoQ_gate)
         # log.info('two qubit gate: ' + str(twoQ_gate))
         return twoQ_gate
-
     def get_recovery_gate(self, gate_seq_1, gate_seq_2, config, gate_seq_Cplr = [], generator = 'CZ'):
         """
         Get the recovery (the inverse) gate
