@@ -674,6 +674,116 @@ class SingleQubit_RB(Sequence):
                 str(qubit_state))
         return recovery_gate
 
+dict_m1QBGate = {'I': np.matrix('1,0;0,1'),
+    'X2p': 1/np.sqrt(2)*np.matrix('1,-1j;-1j,1'),
+    'X2m': 1/np.sqrt(2)*np.matrix('1,1j;1j,1'),
+    'Y2p': 1/np.sqrt(2)*np.matrix('1,-1;1,1'),
+    'Y2m': 1/np.sqrt(2)*np.matrix('1,1;-1,1'),
+    'Z2p': np.matrix('1,0;0,1j'),
+    'Z2m': np.matrix('1,0;0,-1j'),
+    'Xp': np.matrix('0,-1j;-1j,0'),
+    'Xm': np.matrix('0,1j;1j,0'),
+    'Yp': np.matrix('0,-1;1,0'),
+    'Ym': np.matrix('0,1;-1,0'),
+    'Zp': np.matrix('1,0;0,-1'),
+    'Zm': np.matrix('1,0;0,-1')
+    }
+dict_m2QBGate = {'SWAP': np.matrix('1,0,0,0; 0,0,1,0; 0,1,0,0; 0,0,0,1'),
+    'CZ': np.matrix('1,0,0,0; 0,1,0,0; 0,0,1,0; 0,0,0,-1'),
+    'iSWAP': np.matrix('1,0,0,0; 0,0,1j,0; 0,1j,0,0; 0,0,0,1'),
+    'CNOT': np.matrix('1,0,0,0; 0,1,0,0; 0,0,0,1; 0,0,1,0')}
+
+def gate_to_euler_angles(list_1qb_gates):
+    # represent single qubit gate in a three-dimensional (3x3) rotation matrix in (x,y,z) basis
+
+    from scipy.spatial.transform import Rotation as R # requires scipy 1.5.0, requirements: conda update -n base conda (update conda), conda install -c anaconda scipy (install the latest version)
+
+    mat_3d = np.identity(3)
+    for gate in list_1qb_gates:
+        if (gate == gates.I):
+            mat_3d = mat * np.identity(3)
+        elif (gate == gates.X2p):
+            mat_3d = R.from_euler('x', +90, degrees = True).as_matrix()
+        elif (gate == gates.X2m):
+            mat_3d = R.from_euler('x', -90, degrees = True).as_matrix()
+        elif (gate == gates.Y2p):
+            mat_3d = R.from_euler('y', +90, degrees = True).as_matrix()
+        elif (gate == gates.Y2m):
+            mat_3d = R.from_euler('y', -90, degrees = True).as_matrix()
+        elif (gate == gates.Z2p):
+            mat_3d = R.from_euler('z', +90, degrees = True).as_matrix()
+        elif (gate == gates.Z2m):
+            mat_3d = R.from_euler('z', -90, degrees = True).as_matrix()
+        elif (gate == gates.Xp):
+            mat_3d = R.from_euler('x', +180, degrees = True).as_matrix()
+        elif (gate == gates.Xm):
+            mat_3d = R.from_euler('x', -180, degrees = True).as_matrix()
+        elif (gate == gates.Yp):
+            mat_3d = R.from_euler('y', +180, degrees = True).as_matrix()
+        elif (gate == gates.Ym):
+            mat_3d = R.from_euler('y', -180, degrees = True).as_matrix()
+        elif (gate == gates.Zp):
+            mat_3d = R.from_euler('z', +180, degrees = True).as_matrix()
+        elif (gate == gates.Zm):
+            mat_3d = R.from_euler('z', -180, degrees = True).as_matrix()
+        elif isinstance(gate, gates.EulerZGate):
+            mat_3d = R.from_euler('z', gate.theta/np.pi*180, degrees = True).as_matrix()
+        else:
+            raise ValueError('non-identified gate: ' + str(gate))
+    return mat_3d
+def gate_to_mat(step):
+    """
+        convert step object into matrix representation
+    """
+
+    if isinstance(step.gates[1].gate, gates.ZGate_Cplr_iSWAP):
+        mat = np.matrix('1,0,0,0; 0,0,1j,0; 0,1j,0,0; 0,0,0,1')
+    elif isinstance(step.gates[1].gate, gates.ZGate_Cplr_CZ):
+        mat = np.matrix('1,0,0,0; 0,1,0,0; 0,0,1,0; 0,0,0,-1')
+    else:
+        # if one-qubit gate
+        mat = 1
+        # print(step.gates[0].gate)
+        for gate in [step.gates[0].gate, step.gates[2].gate]:
+            # print(gate)
+            if (gate == gates.I):
+                mat = np.kron(mat, np.matrix('1,0;0,1'))
+            elif (gate == gates.X2p):
+                mat = np.kron(mat, 1/np.sqrt(2)*np.matrix('1,-1j;-1j,1'))
+            elif (gate == gates.X2m):
+                mat = np.kron(mat, 1/np.sqrt(2)*np.matrix('1,1j;1j,1')) 
+            elif (gate == gates.Y2p):
+                mat = np.kron(mat, 1/np.sqrt(2)*np.matrix('1,-1;1,1'))
+            elif (gate == gates.Y2m):
+                mat = np.kron(mat, 1/np.sqrt(2)*np.matrix('1,1;-1,1'))
+            elif (gate == gates.Z2p):
+                mat = np.kron(mat, 1/np.sqrt(2)*np.matrix('1,0;0,1j'))
+            elif (gate == gates.Z2m):
+                mat = np.kron(mat, 1/np.sqrt(2)*np.matrix('1,0;0,-1j'))
+            elif (gate == gates.Xp):
+                mat = np.kron(mat, np.matrix('0,-1j;-1j,0'))
+            elif (gate == gates.Xm):
+                mat = np.kron(mat, np.matrix('0,1j;1j,0'))
+            elif (gate == gates.Yp):
+                mat = np.kron(mat, np.matrix('0,-1;1,0'))
+            elif (gate == gates.Ym):
+                mat = np.kron(mat, np.matrix('0,1;-1,0'))
+            elif (gate == gates.Zp):
+                mat = np.kron(mat, np.matrix('1,0;0,-1'))
+            elif (gate == gates.Zm):
+                mat = np.kron(mat, np.matrix('1,0;0,-1'))
+            elif isinstance(gate, gates.EulerZGate):
+                mat = np.kron(mat, np.matrix([[1,0],[0,np.exp(1j*gate.theta)]]))
+
+    return mat
+
+def find_euler_gates(mat):
+    """
+        given the matrix, find the euler gates (X-Y-X)
+        According to Euler's rotation theorem, any rotationmatrix A may be described by multiplication of three rotation matrices along X-Y-X (or Y-X-Y) axes by angles (phi, theta, psi)
+    """
+    pass
+
 class TwoQubit_RB(Sequence):
     """Two qubit randomized benchmarking."""
 
@@ -691,12 +801,11 @@ class TwoQubit_RB(Sequence):
     #     super(Sequence, self).__init__(*args, **kwargs)
     #     self.filepath_lookup_table = ""
 
-
     def _convert_z_to_euler_gates(self):
         # 1. find where two-qubit gate locates
         # 2. split sequence into sub-sequence by two qubit gates. Each sub-sequence consisting of only single qubit gates. 
         # 2. check if Euler Z gate exists in each sub-sequence 
-        # 3. if there is Euler Z, then convert it into the Euler
+        # 3. if there is Euler Z, then convert it into the Euler rotations
 
         # find where 2qb locates
         list_2qb_gate_indicies = []
@@ -707,25 +816,31 @@ class TwoQubit_RB(Sequence):
 
 
         # split sequence into sub-sequence by two qubit gates. 
-        list_steps_1qb_gates = []
+        list_subseqs = []
         for j in range(len(list_2qb_gate_indicies)+1):
             if j == 0:
-                list_steps_1qb_gates.append(self.sequence_list[:list_2qb_gate_indicies[j]])
+                list_subseqs.append(self.sequence_list[:list_2qb_gate_indicies[j]])
             elif j == len(list_2qb_gate_indicies):
-                list_steps_1qb_gates.append(self.sequence_list[list_2qb_gate_indicies[j-1]+1:])
+                list_subseqs.append(self.sequence_list[list_2qb_gate_indicies[j-1]+1:])
             else:
-                list_steps_1qb_gates.append(self.sequence_list[list_2qb_gate_indicies[j-1]+1: list_2qb_gate_indicies[j]])
+                list_subseqs.append(self.sequence_list[list_2qb_gate_indicies[j-1]+1: list_2qb_gate_indicies[j]])
         
-        # find which single-qubit group has eulerZ gates
-        list_eulerz_group_indicies = []
-        for k in range(len(list_steps_1qb_gates)):
-            for l in range(len(list_steps_1qb_gates[k])):
-                step = list_steps_1qb_gates[k][l] 
+        # find which sub-sequence has eulerZ gates
+        list_eulerz_indices = []
+        for k in range(len(list_subseqs)):
+            for l in range(len(list_subseqs[k])):
+                step = list_subseqs[k][l] 
                 if isinstance(step.gates[0].gate, gates.EulerZGate):
-                    list_eulerz_group_indicies.append(k)
+                    list_eulerz_indices.append(k)
 
-
-        print(list_eulerz_group_indicies) 
+        # for sub-sequence having euler-Z gates, convert them into XYX-convention
+        for index in list_eulerz_indices:
+            subseq = list_subseqs[index]
+            print(subseq)
+            mat = np.identity(4)
+            for step in subseq:
+                mat = gate_to_mat(step) * mat
+            print(mat)
 
     def _explode_composite_gates(self):
         # Loop through the sequence until all CompositeGates are removed

@@ -35,15 +35,36 @@ if __name__ == "__main__":
     _config['Qubits to Benchmark (Coupler)'] = '1-2-3'
     gates.iSWAP_Cplr_Z_ahead.new_angles(np.pi*0.3,np.pi*0.3)
     gates.iSWAP_Cplr_Z_behind.new_angles(np.pi*0.3,np.pi*0.3)
-    seq = sequence_rb.TwoQubit_RB(n_qubit = 3)
-    seq.generate_sequence(config = _config)
-    seq.sequence = seq
+    mat_3d = sequence_rb.gate_to_euler_angles([gates.X2p])
+    print(mat_3d)
+    # seq = sequence_rb.TwoQubit_RB(n_qubit = 3)
     # seq.generate_sequence(config = _config)
-    # print(seq.sequence_list)
-    # seq.get_waveforms()
-    seq._explode_composite_gates()
-    seq._convert_z_to_euler_gates()
-    # print(seq)
-    # print(seq.sequence_list)
-    # sequence_rb.add_twoQ_clifford(index, seq_recovery_QB1, seq_recovery_QB2, gate_seq_Cplr = seq_recovery_Cplr, generator = generator)
-    # print(seq_recovery_Cplr)
+    # seq.sequence = seq
+    # seq._explode_composite_gates()
+    # seq._convert_z_to_euler_gates()
+
+            #     mat = np.kron(mat, np.matrix('1,0;0,1'))
+            # elif (gate == gates.X2p):
+            #     mat = np.kron(mat, 1/np.sqrt(2)*np.matrix('1,-1j;-1j,1'))
+            # elif (gate == gates.X2m):
+            #     mat = np.kron(mat, 1/np.sqrt(2)*np.matrix('1,1j;1j,1')) 
+            # elif (gate == gates.Y2p):
+            #     mat = np.kron(mat, 1/np.sqrt(2)*np.matrix('1,-1;1,1'))
+            # elif (gate == gates.Y2m):
+            #     mat = np.kron(mat, 1/np.sqrt(2)*np.matrix('1,1;-1,1'))
+            # elif (gate == gates.Z2p):
+            #     mat = np.kron(mat, 1/np.sqrt(2)*np.matrix('1,0;0,1j'))
+            # elif (gate == gates.Z2m):
+            #     mat = np.kron(mat, 1/np.sqrt(2)*np.matrix('1,0;0,-1j'))
+            # elif (gate == gates.Xp):
+            #     mat = np.kron(mat, np.matrix('0,-1j;-1j,0'))
+            # elif (gate == gates.Xm):
+            #     mat = np.kron(mat, np.matrix('0,1j;1j,0'))
+            # elif (gate == gates.Yp):
+            #     mat = np.kron(mat, np.matrix('0,-1;1,0'))
+            # elif (gate == gates.Ym):
+            #     mat = np.kron(mat, np.matrix('0,1;-1,0'))
+            # elif (gate == gates.Zp):
+            #     mat = np.kron(mat, np.matrix('1,0;0,-1'))
+            # elif (gate == gates.Zm):
+            #     mat = np.kron(mat, np.matrix('1,0;0,-1'))
