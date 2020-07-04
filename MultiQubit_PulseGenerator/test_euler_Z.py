@@ -23,8 +23,8 @@ if __name__ == "__main__":
     # seq = sequence.SequenceToWaveforms(n_qubit = 3)
     _config = dict()
     _config['Sequence'] = '2QB-RB'
-    _config['Number of Cliffords'] = 1
-    _config['Random Seed'] = 1
+    _config['Number of Cliffords'] = 2
+    _config['Random Seed'] = 2
     _config['Interleave 2-QB Gate'] = False
     _config['Output multiple sequences'] = False
     _config['Write sequence as txt file'] = False
@@ -33,15 +33,17 @@ if __name__ == "__main__":
     _config['File path of the look-up table'] = 'recovery_rb_table_iSWAP_Cplr.pickle'
     _config['Native 2-QB gate'] = 'iSWAP_Cplr'
     _config['Qubits to Benchmark (Coupler)'] = '1-2-3'
-    gates.iSWAP_Cplr_Z_ahead.new_angles(np.pi*0.3,np.pi*0.3)
-    gates.iSWAP_Cplr_Z_behind.new_angles(np.pi*0.3,np.pi*0.3)
-    mat_3d = sequence_rb.gate_to_euler_angles([gates.X2p])
-    print(mat_3d)
-    # seq = sequence_rb.TwoQubit_RB(n_qubit = 3)
-    # seq.generate_sequence(config = _config)
-    # seq.sequence = seq
-    # seq._explode_composite_gates()
-    # seq._convert_z_to_euler_gates()
+    # gates.iSWAP_Cplr_Z_ahead.new_angles(30/180*np.pi,30/180*np.pi)
+    # gates.iSWAP_Cplr_Z_behind.new_angles(30/180*np.pi,30/180*np.pi)
+    # mat_3d = sequence_rb.gate_to_euler_angles([gates.X2p])
+    # print(mat_3d)
+    seq = sequence_rb.TwoQubit_RB(n_qubit = 3)
+    seq.generate_sequence(config = _config)
+    seq.sequence = seq
+    seq._explode_composite_gates()
+    # print(seq.sequence.sequence_list)
+    seq._convert_z_to_euler_gates()
+    # print(seq.sequence.sequence_list)
 
             #     mat = np.kron(mat, np.matrix('1,0;0,1'))
             # elif (gate == gates.X2p):

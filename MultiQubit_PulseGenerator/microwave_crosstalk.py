@@ -38,7 +38,7 @@ class Microwave_Crosstalk(object):
         if nQBs > 0:
             for QB in range(0, nQBs):
                 element = config.get('Microwave CT matrix element #%d' % (QB + 1), 'None')
-                log.info('QB element: {}'.format(element))
+                # log.info('QB element: {}'.format(element))
                 if element == 'None':
                     continue
                 else:

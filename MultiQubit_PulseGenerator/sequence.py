@@ -29,6 +29,200 @@ log = logging.getLogger('LabberDriver')
 # TODO Remove pulse from I gates
 
 
+import math
+
+def rotation_matrix(axis, theta):
+    """
+    Return the rotation matrix associated with counterclockwise rotation about
+    the given axis by theta radians.
+    """
+    axis = np.asarray(axis)
+    axis = axis / math.sqrt(np.dot(axis, axis))
+    a = math.cos(theta / 2.0)
+    b, c, d = -axis * math.sin(theta / 2.0)
+    aa, bb, cc, dd = a * a, b * b, c * c, d * d
+    bc, ad, ac, ab, bd, cd = b * c, a * d, a * c, a * b, b * d, c * d
+    return np.array([[aa + bb - cc - dd, 2 * (bc + ad), 2 * (bd - ac)],
+                     [2 * (bc - ad), aa + cc - bb - dd, 2 * (cd + ab)],
+                     [2 * (bd + ac), 2 * (cd - ab), aa + dd - bb - cc]])
+
+def mat_to_euler_angles_xyx(matrix):
+    # find euler angles (x-y-x) give 3d rotation matrix
+    threshold = 1e-8
+    theta = np.arccos(np.clip(matrix[0,0],-1,1))
+    if np.abs(np.sin(theta)) < threshold: 
+        # is theta np.pi or zero?
+        phi = 0
+        psi = np.arctan2(matrix[2,1],matrix[1,1])
+        # if np.abs(theta) < threshold:
+        #     # if theta = 0, one X gate is enough
+        #     phi = 0
+        #     # with np.errstate(divide='ignore'):  # ignore runtimewarning (divide by zero)
+        #     #     psi = np.arctan(matrix[2,1]/matrix[1,1])
+        #     psi = np.arctan2(matrix[2,1],matrix[1,1])
+
+        #     # if np.abs(np.sin(psi)) < threshold:
+        #     #     # distinguish psi np.pi vs zero.
+        #     #     psi = np.arccos(np.clip(matrix[1,1],-1,1))
+        # else:
+        #     # if theta = pi
+        #     phi = 0
+        #     psi = np.arccos(np.clip(matrix[1,1],-1,1))
+
+    elif np.abs(np.cos(theta)) < threshold:
+        # log.info("HELLO!")
+        # is theta +np.pi/2 or -np.pi/2?
+        # calcualte phi, psi
+        phi = np.arctan2(matrix[0,1], matrix[0,2])
+        psi = np.arctan2(matrix[1,0], -matrix[2,0])
+
+        if ((np.abs(matrix[1,0])>threshold) and (np.abs(np.sin(psi)) > 0)):
+            theta = np.arcsin(np.clip(matrix[1,0]/np.sin(psi),-1,1))
+        elif ((np.abs(matrix[2,0])>threshold) and (np.abs(np.cos(psi)) > 0)):
+            theta = np.arcsin(-np.clip(matrix[2,0]/np.cos(psi),-1,1))
+        else:
+            raise ValueError('Singular Matrix, matrix: {}'.format(matrix))
+    else:
+        #is theta positive / negative?
+
+        phi = np.arctan2(matrix[0,1], matrix[0,2])
+        psi = np.arctan2(matrix[0,1], -matrix[0,2])
+        # with np.errstate(divide='ignore'):  # ignore runtimewarning (divide by zero)
+        #     phi = np.arctan(matrix[0,1]/matrix[0,2])
+        #     psi = np.arctan(-matrix[1,0]/matrix[2,0])
+
+        sign_theta = None
+        if np.abs(np.cos(phi)) > threshold:
+            sign_theta = np.sign(matrix[0,2]/np.cos(phi))
+        # elif np.abs(np.sin(phi))> threshold:
+        #     sign_theta = np.sign(matrix[0,1]/np.sin(phi))
+        # print('sign from phi: {}'.format(sign_theta))
+        if np.abs(np.cos(psi)) > threshold:
+            sign_theta = np.sign(-matrix[2,0]/np.cos(psi))
+
+        if sign_theta is None:
+            pass
+        elif sign_theta > 0:
+            theta = np.abs(theta)
+        else:
+            theta = -np.abs(theta)
+
+        # if (np.abs(matrix[0,2]) < threshold):
+        #     phi = np.arcsin(np.clip(matrix[0,1]/np.sin(theta),-1,1))
+
+        # if (np.abs(matrix[2,0]) < threshold):
+        #     psi = np.arcsin(np.clip(matrix[1,0]/np.sin(theta),-1,1))
+
+    # print('phi(X): {}, theta(Y): {}, psi(X): {}'.format(phi/np.pi*180, theta/np.pi*180, psi/np.pi*180))
+    return (phi, theta, psi)
+
+def mat_to_euler_angles_yxy(matrix):
+    # find euler angles (y-x-y) give 3d rotation matrix
+    theta = np.arccos(np.clip(matrix[1,1],-1,1))
+    if theta == 0: # only X gate is enough
+        phi = np.arccos(np.clip(matrix[1,1],-1,1))
+        psi = 0
+    else:
+        with np.errstate(divide='ignore'): # ignore runtimewarning (divide by zero)
+            phi = np.arctan(-matrix[1,0]/matrix[1,2])
+            psi = np.arctan(matrix[0,1]/matrix[2,1])
+    # print('phi(Y): {}, theta(X): {}, psi(Y): {}'.format(phi/np.pi*180, theta/np.pi*180, psi/np.pi*180))
+    return (phi, theta, psi)
+
+def gate_to_euler_gates(list_1qb_gates, convention = 'x-y-x'):
+    threshold = 1e-10
+    phi, theta, psi = gate_to_euler_angles(list_1qb_gates, convention)
+
+    if convention == 'x-y-x':
+        # first X-gate
+        if np.abs(phi) > threshold:
+            X1 = gates.SingleQubitXYRotation(phi=0, theta=phi, name='X={:+.2f}'.format(phi))
+        else:
+            X1 = gates.IdentityGate(width=None)
+
+        # second Y-gate
+        if np.abs(theta) > threshold:
+            Y2 = gates.SingleQubitXYRotation(phi=np.pi*0.5, theta=theta, name='Y={:+.2f}'.format(theta))
+        else:
+            Y2 = gates.IdentityGate(width=None)
+
+        # third X-gate
+        if np.abs(psi) > threshold:
+            X3 = gates.SingleQubitXYRotation(phi=0, theta=psi, name='X={:+.2f}'.format(psi))
+        else:
+            X3 = gates.IdentityGate(width=None)
+        return [X1, Y2, X3]
+
+    elif convention == 'y-x-y':
+        # first Y-gate
+        if np.abs(phi) > threshold:
+            Y1 = gates.SingleQubitXYRotation(phi=np.pi*0.5, theta=phi, name='Y={:+.2f}'.format(phi))
+        else:
+            Y1 = gates.IdentityGate(width=None)
+
+        # second X-gate
+        if np.abs(theta) > threshold:
+            X2 = gates.SingleQubitXYRotation(phi=0, theta=theta, name='X={:+.2f}'.format(theta))
+        else:
+            X2 = gates.IdentityGate(width=None)
+
+        # third Y-gate
+        if np.abs(psi) > threshold:
+            Y3 = gates.SingleQubitXYRotation(phi=np.pi*0.5, theta=psi, name='Y={:+.2f}'.format(psi))
+        else:
+            Y3 = gates.IdentityGate(width=None)
+        return [Y1, X2, Y3]
+
+def gate_to_euler_angles(list_1qb_gates, convention = 'x-y-x'):
+    # represent single qubit gate in a three-dimensional (3x3) rotation matrix in (x,y,z) basis
+
+    mat_3d = np.identity(3)
+    for gate in list_1qb_gates:
+        if (gate == gates.I):
+            mat_3d = np.matmul(np.identity(3), mat_3d) 
+        elif (gate == gates.X2p):
+            mat_3d = np.matmul(rotation_matrix([1,0,0], np.pi*0.5), mat_3d)
+        elif (gate == gates.X2m):
+            mat_3d = np.matmul(rotation_matrix([1,0,0], -np.pi*0.5), mat_3d)
+        elif (gate == gates.Y2p):
+            mat_3d = np.matmul(rotation_matrix([0,1,0], np.pi*0.5), mat_3d)
+        elif (gate == gates.Y2m):
+            mat_3d = np.matmul(rotation_matrix([0,1,0], -np.pi*0.5), mat_3d)
+        elif (gate == gates.Z2p):
+            mat_3d = np.matmul(rotation_matrix([0,0,1], +np.pi*0.5), mat_3d)
+        elif (gate == gates.Z2m):
+            mat_3d = np.matmul(rotation_matrix([0,0,1], -np.pi*0.5), mat_3d)
+        elif (gate == gates.Xp):
+            mat_3d = np.matmul(rotation_matrix([1,0,0], np.pi), mat_3d)
+        elif (gate == gates.Xm):
+            mat_3d = np.matmul(rotation_matrix([1,0,0], -np.pi), mat_3d)
+        elif (gate == gates.Yp):
+            mat_3d = np.matmul(rotation_matrix([0,1,0], np.pi), mat_3d)
+        elif (gate == gates.Ym):
+            mat_3d = np.matmul(rotation_matrix([0,1,0], -np.pi), mat_3d)
+        elif (gate == gates.Zp):
+            mat_3d = np.matmul(rotation_matrix([0,0,1], np.pi), mat_3d)
+        elif (gate == gates.Zm):
+            mat_3d = np.matmul(rotation_matrix([0,0,1], -np.pi), mat_3d)
+        elif isinstance(gate, gates.EulerZGate):
+            mat_3d = np.matmul(rotation_matrix([0,0,1], gate.theta), mat_3d)
+        else:
+            raise ValueError('non-identified gate: ' + str(gate))
+    # print('mat_3d_before: {}'.format(mat_3d))
+    if convention == 'x-y-x':
+        phi, theta, psi = mat_to_euler_angles_xyx(mat_3d)
+        mat_3d_after = np.identity(3)
+        mat_3d_after = np.matmul(rotation_matrix([1,0,0], phi), mat_3d_after)
+        mat_3d_after = np.matmul(rotation_matrix([0,1,0], theta), mat_3d_after)
+        mat_3d_after = np.matmul(rotation_matrix([1,0,0], psi), mat_3d_after)
+        # print('mat_3d_after: {}'.format(mat_3d_after))
+        if not np.allclose(mat_3d, mat_3d_after):
+            raise ValueError('Wrong Euler Angles! list_1qb_gates: {}, \n mat_before: {}, \n mat_after: {} \n, phi(X):{}, theta(Y):{}, psi(X):{}'.format(list_1qb_gates, mat_3d, mat_3d_after, phi, theta, psi))
+    elif convention == 'y-x-y':
+        phi, theta, psi = mat_to_euler_angles_yxy(mat_3d)
+
+    return phi, theta, psi 
+
 class GateOnQubit:
     def __init__(self, gate, qubit, pulse=None):
         self.gate = gate
@@ -583,6 +777,8 @@ class SequenceToWaveforms:
         self.readout_trig = np.array([], dtype=float)
         self.readout_iq = np.array([], dtype=np.complex)
 
+        self.convert_z_to_euler_gates = False
+
     def get_waveforms(self, sequence):
         """Compile the given sequence into waveforms.
 
@@ -610,6 +806,10 @@ class SequenceToWaveforms:
         self._explode_composite_gates()
         # log.info('Point 3: Sequence_list[1].gates = {}'.format(self.sequence_list[1].gates))
         # log.info('Point 3: Sequence_list = {}'.format(self.sequence_list))
+
+        if self.apply_euler_thm == True:
+            self._convert_z_to_euler_gates()
+        # log.info('Point 4: Sequence_list = {}'.format(self.sequence_list))
 
         self._add_pulses_and_durations()
         # log.info('Point 4: Sequence_list[6].gates = {}'.format(self.sequence_list[6].gates))
@@ -804,9 +1004,6 @@ class SequenceToWaveforms:
     # def _perform_crosstalk_compensation(self):
     #     """Compensate for Z-control crosstalk."""
     #     self._wave_z = self._crosstalk.compensate(self._wave_z)
-    def _convert_z_to_euler_gates(self):
-        for n in len(self.sequence_gate):
-            print(n)
 
     def _explode_composite_gates(self):
         # Loop through the sequence until all CompositeGates are removed
@@ -889,8 +1086,107 @@ class SequenceToWaveforms:
 
 
 
+    def _convert_z_to_euler_gates(self):
+        # 1. find where two-qubit gate locates
+        # 2. split sequence into sub-sequence by two qubit gates. Each sub-sequence consisting of only single qubit gates. 
+        # 3. check if Euler Z gate exists in each sub-sequence 
+        # 4. if there is Euler Z, then convert it into the Euler rotations
+        # 5. build un new sequence list 
+
+        # find where 2qb locates
+        list_2qb_gate_indicies = list()
+        list_steps_2qb_gate = list()
+        for n in range(len(self.sequence_list)):
+            step = self.sequence_list[n]
+            if (isinstance(step.gates[1].gate, gates.ZGate_Cplr_iSWAP) or
+               isinstance(step.gates[1].gate, gates.ZGate_Cplr_CZ)) :
+                list_2qb_gate_indicies.append(n)
+                list_steps_2qb_gate.append(step)
+
+
+        # split sequence into sub-sequence by two qubit gates. 
+        list_subseqs = list()
+        step_readout = None
+        for j in range(len(list_2qb_gate_indicies)+1):
+            if j == 0:
+                if len(list_2qb_gate_indicies) == 0: #there is no 2qb gates.
+                    if isinstance(self.sequence_list[-1].gates[0].gate, gates.ReadoutGate):
+                        list_subseqs.append(self.sequence_list[:-1])
+                        step_readout = self.sequence_list[-1]
+                    else:
+                        list_subseqs.append(self.sequence_list)     
+
+                else:
+                    list_subseqs.append(self.sequence_list[:list_2qb_gate_indicies[j]])
+
+            elif j == len(list_2qb_gate_indicies):
+                # log.info(self.sequence_list[-1])
+                if isinstance(self.sequence_list[-1].gates[0].gate, gates.ReadoutGate):
+                    list_subseqs.append(self.sequence_list[list_2qb_gate_indicies[j-1]+1:-1])
+                    step_readout = self.sequence_list[-1]
+                else:
+                    list_subseqs.append(self.sequence_list[list_2qb_gate_indicies[j-1]+1:])
+
+            else:
+                list_subseqs.append(self.sequence_list[list_2qb_gate_indicies[j-1]+1: list_2qb_gate_indicies[j]])
+                
+        # find which sub-sequence has eulerZ gates
+        list_eulerz_indices = list()
+        for k in range(len(list_subseqs)):
+            eulerz_found = False
+            for l in range(len(list_subseqs[k])):
+                step = list_subseqs[k][l] 
+                if isinstance(step.gates[0].gate, gates.EulerZGate):
+                    list_eulerz_indices.append(k)
+                    eulerz_found = True
+            if ((not eulerz_found) and len(list_subseqs[k])>3):
+                # if the number of single qubit gates more than 3, consider rewrite in euler-format
+                list_eulerz_indices.append(k)
+
+        # for sub-sequence having euler-Z gates, convert them into XYX-convention
+        list_subseqs_eulerz = list()
+        for index in list_eulerz_indices:
+            subseq = list_subseqs[index]
+            len_seq = len(subseq)
+            list_qb1_gates = list()
+            list_qb2_gates = list()
+            for m in range(len_seq):
+                list_qb1_gates.append(subseq[m].gates[0].gate)
+                list_qb2_gates.append(subseq[m].gates[2].gate)
+            # print('list_qb1_gates: {}'.format(list_qb1_gates))
+            list_qb1_euler_gates = gate_to_euler_gates(list_qb1_gates, convention = 'x-y-x')
+            # print('list_qb2_gates: {}'.format(list_qb2_gates))
+            list_qb2_euler_gates = gate_to_euler_gates(list_qb2_gates, convention = 'x-y-x')
+            subseq_eulerz = []
+            for m in range(3):
+                step = Step()
+                step.add_gate(0,list_qb1_euler_gates[m])
+                step.add_gate(1,gates.IdentityGate(width = None))
+                step.add_gate(2,list_qb2_euler_gates[m])
+                subseq_eulerz.append(step)
+            list_subseqs_eulerz.append(subseq_eulerz)
+
+        # build-up the sequence
+        new_sequence_list = list()
+        cnt_eulerz = 0
+        cnt_2qb_gate = 0
+        for j, subseq in enumerate(list_subseqs):
+            if j in list_eulerz_indices:
+                # print(list_subseqs_eulerz[cnt])
+                new_sequence_list.extend(list_subseqs_eulerz[cnt_eulerz])
+                cnt_eulerz += 1
+            else:
+                new_sequence_list.extend(subseq)
+            if j != len(list_subseqs)-1:
+                new_sequence_list.append(list_steps_2qb_gate[cnt_2qb_gate])
+                cnt_2qb_gate +=1
+        if step_readout is not None:
+            new_sequence_list.append(step_readout)
+
+        self.sequence_list = new_sequence_list
+
     def _perform_virtual_z_iswap(self):
-        log.info('_perform_virtual_z_iswap, n_qubit: {}'.format(self.n_qubit))
+        # log.info('_perform_virtual_z_iswap, n_qubit: {}'.format(self.n_qubit))
         arr_phase = np.zeros(self.n_qubit) # only works for two-qubit system
         num_iswap = 0
         for step in self.sequence_list:
@@ -923,13 +1219,13 @@ class SequenceToWaveforms:
                             # and arr_phase[qubit] != 0):
                         gate.gate = copy.copy(gate_obj)
                         gate.gate.phi += arr_phase[qubit]
-                        asymm_part = 0
-                        if qubit == 0:
-                            asymm_part = np.floor(num_iswap*0.5)*(gates.iSWAP_Cplr.phi1_Asymm + gates.iSWAP_Cplr.phi2_Asymm) + np.floor(num_iswap%2*0.5 + 0.5)*gates.iSWAP_Cplr.phi1_Asymm
-                        elif qubit == 2:
-                            asymm_part = np.floor(num_iswap*0.5)*(gates.iSWAP_Cplr.phi1_Asymm + gates.iSWAP_Cplr.phi2_Asymm) + np.floor(num_iswap%2*0.5 + 0.5)*gates.iSWAP_Cplr.phi2_Asymm
-                        gate.gate.phi += asymm_part   
-                        log.info('Number of iSWAP: {}, QB{} -, symm_part: {}, asymm_part:{}'.format(num_iswap, qubit, arr_phase[qubit], asymm_part))
+                        # asymm_part = 0
+                        # if qubit == 0:
+                        #     asymm_part = np.floor(num_iswap*0.5)*(gates.iSWAP_Cplr.phi1_Asymm + gates.iSWAP_Cplr.phi2_Asymm) + np.floor(num_iswap%2*0.5 + 0.5)*gates.iSWAP_Cplr.phi1_Asymm
+                        # elif qubit == 2:
+                        #     asymm_part = np.floor(num_iswap*0.5)*(gates.iSWAP_Cplr.phi1_Asymm + gates.iSWAP_Cplr.phi2_Asymm) + np.floor(num_iswap%2*0.5 + 0.5)*gates.iSWAP_Cplr.phi2_Asymm
+                        # gate.gate.phi += asymm_part   
+                        # log.info('Number of iSWAP: {}, QB{} -, symm_part: {}, asymm_part:{}'.format(num_iswap, qubit, arr_phase[qubit], asymm_part))
                         gate.pulse = self._get_pulse_for_gate(gate)
                         
 
@@ -1396,11 +1692,12 @@ class SequenceToWaveforms:
         self.trim_to_sequence = config.get('Trim waveform to sequence')
         self.trim_start = config.get('Trim both start and end')
         self.align_to_end = config.get('Align pulses to end of waveform')
+        self.apply_euler_thm = config.get('Apply Euler Angle Thm')
 
         for n in range(self.n_qubit):
             m = n + 1
             self.phase_offsets[n] = config.get('Phase Offset #{}'.format(m), 0)
-        log.info('self.phase_offsets = {}'.format(self.phase_offsets))
+        # log.info('self.phase_offsets = {}'.format(self.phase_offsets))
         # qubit spectra
         for n in range(self.n_qubit):
             m = n + 1  # pulses are indexed from 1 in Labber
@@ -1700,9 +1997,9 @@ class SequenceToWaveforms:
                         polarity = 'positive')
 
         # To reduce unnecessary into X&Y Gates as much as possible, we use two different versions of iSWAP gate.
-        iSWAP_Cplr_Z_behind.new_angles(
+        gates.iSWAP_Cplr_Z_behind.new_angles(
             config.get('FQB Phi, 2QB (iSWAP, Cplr, 1-2)'), config.get('TQB Phi, 2QB (iSWAP, Cplr, 1-2)'))
-        iSWAP_Cplr_Z_ahead.new_angles(
+        gates.iSWAP_Cplr_Z_ahead.new_angles(
             config.get('TQB Phi, 2QB (iSWAP, Cplr, 1-2)'), config.get('FQB Phi, 2QB (iSWAP, Cplr, 1-2)'))
 
 
