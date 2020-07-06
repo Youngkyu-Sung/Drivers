@@ -1199,12 +1199,12 @@ class TwoQubit_RB(Sequence):
             if cliffordSeqCplr: 
                 cliffordSeqCplr = [m for n, m in enumerate(cliffordSeqCplr) if n not in index_identity_clifford]
 
-            # log.info('*** clifford sequence *** ')
-            # log.info("QB1 clifford gate sequence: " + str([cliffords.Gate_to_strGate(g) for g in cliffordSeq1]))
-            # log.info("QB2 clifford gate sequence: " + str([cliffords.Gate_to_strGate(g) for g in cliffordSeq2]))
-            # if generator in ['iSWAP_Cplr', 'CZ_Cplr']:
-            #     log.info("Coupler clifford gate sequence: " + str([cliffords.Gate_to_strGate(g) for g in cliffordSeqCplr]))
-            # log.info("=================================================")
+            log.info('*** clifford sequence *** ')
+            log.info("QB1 clifford gate sequence: " + str([cliffords.Gate_to_strGate(g) for g in cliffordSeq1]))
+            log.info("QB2 clifford gate sequence: " + str([cliffords.Gate_to_strGate(g) for g in cliffordSeq2]))
+            if generator in ['iSWAP_Cplr', 'CZ_Cplr']:
+                log.info("Coupler clifford gate sequence: " + str([cliffords.Gate_to_strGate(g) for g in cliffordSeqCplr]))
+            log.info("=================================================")
 
             # get recovery gate seq
             (recoverySeq1, recoverySeq2, recoverySeqCplr) = self.get_recovery_gate(
@@ -1283,32 +1283,32 @@ class TwoQubit_RB(Sequence):
                              print("CliffordIndex: %d, Gate: ["%(i) + cliffords.Gate_to_strGate(cliffordSeq1[i]) + ", " + cliffords.Gate_to_strGate(cliffordSeq2[i]) +']', file=text_file)
                         for i in range(len(recoverySeq1)):
                              print("RecoveryIndex: %d, Gate: ["%(i) + cliffords.Gate_to_strGate(recoverySeq1[i]) + ", " + cliffords.Gate_to_strGate(recoverySeq2[i]) +']', file=text_file)
-            # psi = np.matmul(self.evaluate_sequence(gateSeq1, gateSeq2), psi_gnd)
+            psi = np.matmul(self.evaluate_sequence(gateSeq1, gateSeq2), psi_gnd)
             mat_before = self.evaluate_sequence(cliffordSeq1, cliffordSeq2, gate_seq_Cplr = cliffordSeqCplr, generator = generator)
             mat_recovery = self.evaluate_sequence(recoverySeq1, recoverySeq2, gate_seq_Cplr = recoverySeqCplr, generator = generator)
             mat_after = self.evaluate_sequence(gateSeq1, gateSeq2, gate_seq_Cplr = gateSeqCplr, generator = generator)
-            # log.info('mat_recovery * mat_before: {}'.format(mat_recovery*mat_before))
-            # log.info('mat_before: {}'.format(mat_before))
-            # log.info('mat of recovery: {}'.format(mat_recovery))
-            # log.info('mat_after: {}'.format(mat_after))
-            # log.info('cliffordSeq1: {}'.format(cliffordSeq1))
-            # log.info('recoverySeq1: {}'.format(recoverySeq1))
-            # log.info('gateSeq1: {}'.format(gateSeq1))
-            # log.info('cliffordSeqCplr: {}'.format(cliffordSeqCplr))
-            # log.info('recoverySeqCplr: {}'.format(recoverySeqCplr))
-            # log.info('gateSeqCplr: {}'.format(gateSeqCplr))
-            # log.info('cliffordSeq2: {}'.format(cliffordSeq2))
-            # log.info('recoverySeq2: {}'.format(recoverySeq2))
-            # log.info('gateSeq2: {}'.format(gateSeq2))
-            # log.info('len(cliffordSeq1): {}'.format(len(cliffordSeq1)))
-            # log.info('len(cliffordSeq2): {}'.format(len(cliffordSeq2)))
-            # log.info('len(cliffordSeqCplr): {}'.format(len(cliffordSeqCplr)))
-            # log.info('len(recoverySeq1): {}'.format(len(recoverySeq1)))
-            # log.info('len(recoverySeq2): {}'.format(len(recoverySeq2)))
-            # log.info('len(recoverySeqCplr): {}'.format(len(recoverySeqCplr)))
-            # log.info('len(gateSeq1): {}'.format(len(gateSeq1)))
-            # log.info('len(gateSeq2): {}'.format(len(gateSeq2)))
-            # log.info('len(gateSeqCplr): {}'.format(len(gateSeqCplr)))
+            log.info('mat_recovery * mat_before: {}'.format(mat_recovery*mat_before))
+            log.info('mat_before: {}'.format(mat_before))
+            log.info('mat of recovery: {}'.format(mat_recovery))
+            log.info('mat_after: {}'.format(mat_after))
+            log.info('cliffordSeq1: {}'.format(cliffordSeq1))
+            log.info('recoverySeq1: {}'.format(recoverySeq1))
+            log.info('gateSeq1: {}'.format(gateSeq1))
+            log.info('cliffordSeqCplr: {}'.format(cliffordSeqCplr))
+            log.info('recoverySeqCplr: {}'.format(recoverySeqCplr))
+            log.info('gateSeqCplr: {}'.format(gateSeqCplr))
+            log.info('cliffordSeq2: {}'.format(cliffordSeq2))
+            log.info('recoverySeq2: {}'.format(recoverySeq2))
+            log.info('gateSeq2: {}'.format(gateSeq2))
+            log.info('len(cliffordSeq1): {}'.format(len(cliffordSeq1)))
+            log.info('len(cliffordSeq2): {}'.format(len(cliffordSeq2)))
+            log.info('len(cliffordSeqCplr): {}'.format(len(cliffordSeqCplr)))
+            log.info('len(recoverySeq1): {}'.format(len(recoverySeq1)))
+            log.info('len(recoverySeq2): {}'.format(len(recoverySeq2)))
+            log.info('len(recoverySeqCplr): {}'.format(len(recoverySeqCplr)))
+            log.info('len(gateSeq1): {}'.format(len(gateSeq1)))
+            log.info('len(gateSeq2): {}'.format(len(gateSeq2)))
+            log.info('len(gateSeqCplr): {}'.format(len(gateSeqCplr)))
 
             psi = np.matmul(self.evaluate_sequence(gateSeq1, gateSeq2, gate_seq_Cplr = gateSeqCplr, generator = generator), psi_gnd)
 
@@ -1546,7 +1546,7 @@ class TwoQubit_RB(Sequence):
 
         qubit_state = np.matmul(self.evaluate_sequence(
             gate_seq_1, gate_seq_2, gate_seq_Cplr = gate_seq_Cplr, generator = generator), qubit_state)
-        log.info('qubit_state: {}'.format(qubit_state))
+        # log.info('qubit_state: {}'.format(qubit_state))
         # find recovery gate which makes qubit_state return to initial state
         total_num_cliffords = 11520
         recovery_seq_1 = []

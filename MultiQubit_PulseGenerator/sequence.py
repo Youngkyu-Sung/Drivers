@@ -132,7 +132,7 @@ def mat_to_euler_angles_yxy(matrix):
 def gate_to_euler_gates(list_1qb_gates, convention = 'x-y-x'):
     threshold = 1e-10
     phi, theta, psi = gate_to_euler_angles(list_1qb_gates, convention)
-
+    # phi, theta, psi = 0,0,0
     if convention == 'x-y-x':
         # first X-gate
         if np.abs(phi) > threshold:
@@ -217,7 +217,8 @@ def gate_to_euler_angles(list_1qb_gates, convention = 'x-y-x'):
         mat_3d_after = np.matmul(rotation_matrix([1,0,0], phi), mat_3d_after)
         mat_3d_after = np.matmul(rotation_matrix([0,1,0], theta), mat_3d_after)
         mat_3d_after = np.matmul(rotation_matrix([1,0,0], psi), mat_3d_after)
-        # print('mat_3d_after: {}'.format(mat_3d_after))
+        log.info('mat_3d_before: {}'.format(mat_3d))
+        log.info('mat_3d_after: {}'.format(mat_3d_after))
         if not np.allclose(mat_3d, mat_3d_after, atol = 1e-5):
             raise ValueError('Wrong Euler Angles! list_1qb_gates: {}, \n mat_before: {}, \n mat_after: {} \n, phi(X):{}, theta(Y):{}, psi(X):{}'.format(list_1qb_gates, mat_3d, mat_3d_after, phi, theta, psi))
     elif convention == 'y-x-y':
@@ -1139,29 +1140,33 @@ class SequenceToWaveforms:
             for l in range(len(list_subseqs[k])):
                 step = list_subseqs[k][l] 
                 if isinstance(step.gates[0].gate, gates.EulerZGate):
-                    list_eulerz_indices.append(k)
+                    if not eulerz_found:
+                        list_eulerz_indices.append(k)
+                        log.info('eulerz append: {}'.format(k))
                     eulerz_found = True
             if ((not eulerz_found) and len(list_subseqs[k])>3):
                 # if the number of single qubit gates more than 3, consider rewrite in euler-format
                 list_eulerz_indices.append(k)
+                eulerz_found = True
 
         # for sub-sequence having euler-Z gates, convert them into XYX-convention
         list_subseqs_eulerz = list()
         for index in list_eulerz_indices:
             subseq = list_subseqs[index]
+
+            log.info('subseq in euler_z: {}'.format(subseq))
             len_seq = len(subseq)
             list_qb1_gates = list()
             list_qb2_gates = list()
             for m in range(len_seq):
-                # log.info('subseq[m].gates: {}'.format(subseq[m].gates))
                 for gate_on_qb in (subseq[m].gates):
                     if gate_on_qb.qubit == 0:
                         list_qb1_gates.append(gate_on_qb.gate)
                     elif gate_on_qb.qubit == 2:
                         list_qb2_gates.append(gate_on_qb.gate)
-            # print('list_qb1_gates: {}'.format(list_qb1_gates))
+            print('list_qb1_gates: {}'.format(list_qb1_gates))
             list_qb1_euler_gates = gate_to_euler_gates(list_qb1_gates, convention = 'x-y-x')
-            # print('list_qb2_gates: {}'.format(list_qb2_gates))
+            print('list_qb2_gates: {}'.format(list_qb2_gates))
             list_qb2_euler_gates = gate_to_euler_gates(list_qb2_gates, convention = 'x-y-x')
             subseq_eulerz = []
             for m in range(3):
@@ -1177,8 +1182,11 @@ class SequenceToWaveforms:
         cnt_eulerz = 0
         cnt_2qb_gate = 0
         for j, subseq in enumerate(list_subseqs):
+            log.info("j: {}, list_eulerz_indices: {}".format(j, list_eulerz_indices))
             if j in list_eulerz_indices:
                 # print(list_subseqs_eulerz[cnt])
+                log.info('%d / %d'%(cnt_eulerz, len(list_subseqs_eulerz)))
+                log.info('extend for new_sequence_list: {}'.format(list_subseqs_eulerz[cnt_eulerz]))
                 new_sequence_list.extend(list_subseqs_eulerz[cnt_eulerz])
                 cnt_eulerz += 1
             else:
@@ -1189,7 +1197,9 @@ class SequenceToWaveforms:
         if step_readout is not None:
             new_sequence_list.append(step_readout)
 
+        log.info('sequence_list (before): {}'.format(self.sequence_list))
         self.sequence_list = new_sequence_list
+        log.info('sequence_list (after): {}'.format(self.sequence_list))
 
     def _perform_virtual_z_iswap(self):
         # log.info('_perform_virtual_z_iswap, n_qubit: {}'.format(self.n_qubit))

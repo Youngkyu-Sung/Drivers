@@ -42,6 +42,32 @@ dict_m2QBGate = {'SWAP': np.matrix('1,0,0,0; 0,0,1,0; 0,1,0,0; 0,0,0,1'),
     'CNOT': np.matrix('1,0,0,0; 0,1,0,0; 0,0,0,1; 0,0,1,0')}
 
 
+def CheckIdentity(matrix):
+    """
+    Check whether the matrix is identity by calculating it numerically.
+
+    Parameters
+    ----------
+    matrix: 4x4 np.matrix
+        matrix
+
+    Returns
+    -------
+    result: bool
+        True, if identity.
+    """
+
+    #Check all the diagonal entries.
+    if ((np.abs(np.abs(matrix[0,0])-1)< 1e-6) and
+        (np.abs(np.abs(matrix[1,1])-1)< 1e-6) and
+        (np.abs(np.abs(matrix[2,2])-1)< 1e-6) and
+        (np.abs(np.abs(matrix[3,3])-1)< 1e-6) and
+        (np.abs(matrix[1,1]/matrix[0,0]-1)<1e-6) and
+        (np.abs(matrix[2,2]/matrix[0,0]-1)<1e-6) and
+        (np.abs(matrix[3,3]/matrix[0,0]-1)<1e-6)):
+        return True
+    else:
+        return False
 def expect(_psi, _op):
     """
     Get the expectation value of the operator, given the quantum state
@@ -385,10 +411,13 @@ if __name__ == "__main__":
                 seq_QB2 = []
                 seq_Cplr = []
 
-                sequence_rb.add_twoQ_clifford(j, seq_QB1, seq_QB2, gate_seq_Cplr = seq_Cplr, generator = generator)
+                # sequence_rb.add_twoQ_clifford(j, seq_QB1, seq_QB2, gate_seq_Cplr = seq_Cplr, generator = generator)
                 # sequence_rb.add_twoQ_clifford(j, seq_QB1, seq_QB2)
                 # print(dot(recovery_gate, final_psi_00))
                 # exit()
+                # matrix_recovery = evaluate_sequence(recovery_seq_1, recovery_seq_2, gate_seq_Cplr = recovery_seq_Cplr, generator = generator)
+
+                # matrix_total = np.matmul(matrix_recovery,matrix_cliffords)
                 if ((np.abs(1-np.abs(dot(recovery_gate, final_psi_00)[0,0])) < 1e-6) and
                     (np.abs(1-np.abs(dot(recovery_gate, final_psi_01)[1,0])) < 1e-6) and
                     (np.abs(1-np.abs(dot(recovery_gate, final_psi_10)[2,0])) < 1e-6) and
