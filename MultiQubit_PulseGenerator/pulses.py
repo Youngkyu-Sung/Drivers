@@ -461,7 +461,7 @@ class CZ(Pulse):
         # clip theta_f to remove numerical outliers
         theta_t = np.clip(theta_t, self.theta_i, None)
         df = 2*self.Coupling * (1 / np.tan(theta_t) - 1 / np.tan(self.theta_i))
-        log.info('self.qubit: ' +str(self.qubit))
+        # log.info('self.qubit: ' +str(self.qubit))
         if self.qubit is None:
             # Use linear dependence if no qubit was given
             # log.info('---> df (linear): ' +str(df))

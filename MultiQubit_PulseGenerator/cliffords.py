@@ -192,6 +192,10 @@ def strGate_to_Gate(_strGate):
         g = gates.CZ
     elif (_strGate == 'iSWAP_Cplr'):
         g = gates.iSWAP_Cplr
+    elif (_strGate == 'iSWAP_Cplr_Z_ahead'):
+        g = gates.iSWAP_Cplr_Z_ahead
+    elif (_strGate == 'iSWAP_Cplr_Z_behind'):
+        g = gates.iSWAP_Cplr_Z_behind
     elif (_strGate == 'CZ_Cplr'):
         g = gates.CZ_Cplr
 
@@ -236,7 +240,10 @@ def generate_2QB_Cliffords(_index, **kwargs):
                 m2QBClifford = mul(_mGate, m2QBClifford)
                 continue
         elif (generator == 'iSWAP_Cplr'):
-            if (seq_Cplr[i] == gates.iSWAP_Cplr):
+            if ((seq_Cplr[i] == gates.iSWAP_Cplr) 
+                or (seq_Cplr[i] == gates.iSWAP_Cplr_Z_ahead)
+                or (seq_Cplr[i] == gates.iSWAP_Cplr_Z_behind)
+                ):
                 _mGate = np.kron(dict_m2QBGate['iSWAP'], _mGate)
                 m2QBClifford = mul(_mGate, m2QBClifford)
                 continue
@@ -406,7 +413,10 @@ if __name__ == "__main__":
                             else:
                                 N_1QB_gate += 2
                         elif generator == 'iSWAP_Cplr':
-                            if (seq_Cplr[k] == gates.iSWAP_Cplr):
+                            if ((seq_Cplr[k] == gates.iSWAP_Cplr) 
+                                or (seq_Cplr[k] == gates.iSWAP_Cplr_Z_ahead) 
+                                or (seq_Cplr[k] == gates.iSWAP_Cplr_Z_behind)
+                                ):
                                 N_2QB_gate += 1
                             else:
                                 N_1QB_gate += 2

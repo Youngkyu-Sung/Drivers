@@ -86,7 +86,7 @@ def mat_to_euler_angles_xyx(matrix):
         #is theta positive / negative?
 
         phi = np.arctan2(matrix[0,1], matrix[0,2])
-        psi = np.arctan2(matrix[0,1], -matrix[0,2])
+        psi = np.arctan2(matrix[1,0], -matrix[2,0])
         # with np.errstate(divide='ignore'):  # ignore runtimewarning (divide by zero)
         #     phi = np.arctan(matrix[0,1]/matrix[0,2])
         #     psi = np.arctan(-matrix[1,0]/matrix[2,0])
@@ -206,6 +206,8 @@ def gate_to_euler_angles(list_1qb_gates, convention = 'x-y-x'):
             mat_3d = np.matmul(rotation_matrix([0,0,1], -np.pi), mat_3d)
         elif isinstance(gate, gates.EulerZGate):
             mat_3d = np.matmul(rotation_matrix([0,0,1], gate.theta), mat_3d)
+        elif isinstance(gate, gates.IdentityGate):
+            mat_3d = np.matmul(np.identity(3), mat_3d)
         else:
             raise ValueError('non-identified gate: ' + str(gate))
     # print('mat_3d_before: {}'.format(mat_3d))
@@ -216,7 +218,7 @@ def gate_to_euler_angles(list_1qb_gates, convention = 'x-y-x'):
         mat_3d_after = np.matmul(rotation_matrix([0,1,0], theta), mat_3d_after)
         mat_3d_after = np.matmul(rotation_matrix([1,0,0], psi), mat_3d_after)
         # print('mat_3d_after: {}'.format(mat_3d_after))
-        if not np.allclose(mat_3d, mat_3d_after):
+        if not np.allclose(mat_3d, mat_3d_after, atol = 1e-5):
             raise ValueError('Wrong Euler Angles! list_1qb_gates: {}, \n mat_before: {}, \n mat_after: {} \n, phi(X):{}, theta(Y):{}, psi(X):{}'.format(list_1qb_gates, mat_3d, mat_3d_after, phi, theta, psi))
     elif convention == 'y-x-y':
         phi, theta, psi = mat_to_euler_angles_yxy(mat_3d)
@@ -1129,7 +1131,7 @@ class SequenceToWaveforms:
 
             else:
                 list_subseqs.append(self.sequence_list[list_2qb_gate_indicies[j-1]+1: list_2qb_gate_indicies[j]])
-                
+        log.info('list_subseqs:{}'.format(list_subseqs))
         # find which sub-sequence has eulerZ gates
         list_eulerz_indices = list()
         for k in range(len(list_subseqs)):
@@ -1151,8 +1153,12 @@ class SequenceToWaveforms:
             list_qb1_gates = list()
             list_qb2_gates = list()
             for m in range(len_seq):
-                list_qb1_gates.append(subseq[m].gates[0].gate)
-                list_qb2_gates.append(subseq[m].gates[2].gate)
+                # log.info('subseq[m].gates: {}'.format(subseq[m].gates))
+                for gate_on_qb in (subseq[m].gates):
+                    if gate_on_qb.qubit == 0:
+                        list_qb1_gates.append(gate_on_qb.gate)
+                    elif gate_on_qb.qubit == 2:
+                        list_qb2_gates.append(gate_on_qb.gate)
             # print('list_qb1_gates: {}'.format(list_qb1_gates))
             list_qb1_euler_gates = gate_to_euler_gates(list_qb1_gates, convention = 'x-y-x')
             # print('list_qb2_gates: {}'.format(list_qb2_gates))
