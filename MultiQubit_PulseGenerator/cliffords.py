@@ -334,7 +334,7 @@ if __name__ == "__main__":
     # -------------------------------------------------------------------
 
     # Native 2QB Gate ('CZ' or 'iSWAP_Cplr' or 'CZ_Cplr')
-    generator = 'CZ_Cplr'
+    generator = 'iSWAP_Cplr'
 
     # Start with ground state
     psi_00 = np.matrix('1;0;0;0')

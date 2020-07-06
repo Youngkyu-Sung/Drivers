@@ -1161,7 +1161,7 @@ class TwoQubit_RB(Sequence):
                             cliffordSeq1.append(g[1])
                             cliffordSeq2.append(g[0])
                     elif interleaved_gate == 'iSWAP_Cplr':
-                        gate = gates.iSWAP_Cplr
+                        gate = gates.iSWAP_Cplr_Z_behind
                         cliffordSeq1.append(gates.I)
                         # cliffordSeqCplr.append(gates.iSWAP_Cplr)
                         cliffordSeqCplr.append(gates.iSWAP_Cplr_Z_behind)
@@ -1370,7 +1370,7 @@ class TwoQubit_RB(Sequence):
                         # self.add_gate(qubit=[0, 1], gate=gate_seq)
                         self.add_gate(qubit=qubits_to_benchmark, gate=gate_seq)
                 elif generator == 'iSWAP_Cplr':
-                    if gate_seq[1] == gates.iSWAP_Cplr:
+                    if gate_seq[1] in [gates.iSWAP_Cplr, gates.iSWAP_Cplr_Z_behind, gates.iSWAP_Cplr_Z_ahead]:
                         self.add_gate(qubit=qubits_to_benchmark, gate=gate_seq[1])
                     else:
                         self.add_gate(qubit=qubits_to_benchmark, gate=gate_seq)
@@ -1461,7 +1461,9 @@ class TwoQubit_RB(Sequence):
                         np.matrix([[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0],
                                    [0, 0, 0, -1]]), gate_12)
             elif generator == 'iSWAP_Cplr':
-                if gate_seq_Cplr[i] == gates.iSWAP_Cplr:
+                if ((gate_seq_Cplr[i] == gates.iSWAP_Cplr)
+                    or (gate_seq_Cplr[i] == gates.iSWAP_Cplr_Z_behind)
+                    or (gate_seq_Cplr[i] == gates.iSWAP_Cplr_Z_ahead)):
                     gate_12 = np.matmul(
                         np.matrix([[1, 0, 0, 0], [0, 0, 1j, 0], [0, 1j, 0, 0],
                                    [0, 0, 0, 1]]), gate_12)
@@ -1610,7 +1612,9 @@ class TwoQubit_RB(Sequence):
                             else:
                                 N_1QB_gate += 2
                         elif generator == 'iSWAP_Cplr':
-                            if (recovery_seq_Cplr[j] == gates.iSWAP_Cplr):
+                            if ((recovery_seq_Cplr[j] == gates.iSWAP_Cplr)
+                                or (recovery_seq_Cplr[j] == gates.iSWAP_Cplr_Z_behind)
+                                or (recovery_seq_Cplr[j] == gates.iSWAP_Cplr_Z_ahead)):
                                 N_2QB_gate += 1
                             else:
                                 N_1QB_gate += 2
@@ -1755,7 +1759,8 @@ class TwoQubit_XEB(Sequence):
                     pass
                 elif generator == 'iSWAP_Cplr':
                     gateSeq1.append(gates.I)
-                    gateSeqCplr.append(gates.iSWAP_Cplr)
+                    # gateSeqCplr.append(gates.iSWAP_Cplr)
+                    gateSeqCplr.append(gates.iSWAP_Cplr_Z_ahead)
                     gateSeq2.append(gates.I)
                 elif generator == 'CZ_Cplr':
                     gateSeq1.append(gates.I)
@@ -1798,7 +1803,9 @@ class TwoQubit_XEB(Sequence):
                 elif generator == 'I':
                     self.add_gate(qubit = qubits_to_benchmark, gate = gate_seq)
                 elif generator == 'iSWAP_Cplr':
-                    if gate_seq[1] == gates.iSWAP_Cplr:
+                    if ((gate_seq[1] == gates.iSWAP_Cplr)
+                        or (gate_seq[1] == gates.iSWAP_Cplr_Z_ahead)
+                        or (gate_seq[1] == gates.iSWAP_Cplr_Z_behind)):
                         self.add_gate(qubit=qubits_to_benchmark, gate=gate_seq[1])
                     else:
                         self.add_gate(qubit=qubits_to_benchmark, gate=gate_seq)
@@ -1837,7 +1844,9 @@ class TwoQubit_XEB(Sequence):
                 elif generator == 'I':
                     self.add_gate(qubit=qubits_to_benchmark, gate=gate_seq)
                 elif generator == 'iSWAP_Cplr':
-                    if gate_seq[1] == gates.iSWAP_Cplr:
+                    if ((gate_seq[1] == gates.iSWAP_Cplr)
+                        or (gate_seq[1] == gates.iSWAP_Cplr_Z_ahead)
+                        or (gate_seq[2] == gates.iSWAP_Cplr_Z_behind)):
                         self.add_gate(qubit=qubits_to_benchmark, gate=gate_seq[1])
                     else:
                         self.add_gate(qubit=qubits_to_benchmark, gate=gate_seq)
