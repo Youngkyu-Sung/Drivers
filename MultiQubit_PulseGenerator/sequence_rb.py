@@ -482,7 +482,7 @@ def add_SWAP_like_twoQ_clifford(index, gate_seq_1, gate_seq_2, gate_seq_Cplr = [
         gate_seq_2.append(gates.I)
 
         gate_seq_1.append(gates.I)
-        add_singleQ_S1(0, gate_seq_Cplr) # add redundant I gates for a coupler
+        gate_seq_Cplr.append(gates.I)
         gate_seq_2.append(gates.X2m)
 
 class SingleQubit_RB(Sequence):
@@ -1284,11 +1284,36 @@ class TwoQubit_RB(Sequence):
                         for i in range(len(recoverySeq1)):
                              print("RecoveryIndex: %d, Gate: ["%(i) + cliffords.Gate_to_strGate(recoverySeq1[i]) + ", " + cliffords.Gate_to_strGate(recoverySeq2[i]) +']', file=text_file)
             # psi = np.matmul(self.evaluate_sequence(gateSeq1, gateSeq2), psi_gnd)
+            mat_before = self.evaluate_sequence(cliffordSeq1, cliffordSeq2, gate_seq_Cplr = cliffordSeqCplr, generator = generator)
+            mat_recovery = self.evaluate_sequence(recoverySeq1, recoverySeq2, gate_seq_Cplr = recoverySeqCplr, generator = generator)
+            mat_after = self.evaluate_sequence(gateSeq1, gateSeq2, gate_seq_Cplr = gateSeqCplr, generator = generator)
+            # log.info('mat_recovery * mat_before: {}'.format(mat_recovery*mat_before))
+            # log.info('mat_before: {}'.format(mat_before))
+            # log.info('mat of recovery: {}'.format(mat_recovery))
+            # log.info('mat_after: {}'.format(mat_after))
+            # log.info('cliffordSeq1: {}'.format(cliffordSeq1))
+            # log.info('recoverySeq1: {}'.format(recoverySeq1))
+            # log.info('gateSeq1: {}'.format(gateSeq1))
+            # log.info('cliffordSeqCplr: {}'.format(cliffordSeqCplr))
+            # log.info('recoverySeqCplr: {}'.format(recoverySeqCplr))
+            # log.info('gateSeqCplr: {}'.format(gateSeqCplr))
+            # log.info('cliffordSeq2: {}'.format(cliffordSeq2))
+            # log.info('recoverySeq2: {}'.format(recoverySeq2))
+            # log.info('gateSeq2: {}'.format(gateSeq2))
+            # log.info('len(cliffordSeq1): {}'.format(len(cliffordSeq1)))
+            # log.info('len(cliffordSeq2): {}'.format(len(cliffordSeq2)))
+            # log.info('len(cliffordSeqCplr): {}'.format(len(cliffordSeqCplr)))
+            # log.info('len(recoverySeq1): {}'.format(len(recoverySeq1)))
+            # log.info('len(recoverySeq2): {}'.format(len(recoverySeq2)))
+            # log.info('len(recoverySeqCplr): {}'.format(len(recoverySeqCplr)))
+            # log.info('len(gateSeq1): {}'.format(len(gateSeq1)))
+            # log.info('len(gateSeq2): {}'.format(len(gateSeq2)))
+            # log.info('len(gateSeqCplr): {}'.format(len(gateSeqCplr)))
+
             psi = np.matmul(self.evaluate_sequence(gateSeq1, gateSeq2, gate_seq_Cplr = gateSeqCplr, generator = generator), psi_gnd)
 
             # np.set_printoptions(precision=2)
             # log.info('The matrix of the overall gate sequence:')
-            # log.info(self.evaluate_sequence(gateSeq1, gateSeq2))
             # log.info(self.evaluate_sequence(gateSeq1, gateSeq2, gate_seq_Cplr = gateSeqCplr, generator = generator))
 
             log.info('--- TESTING THE RECOVERY GATE ---')
@@ -1521,7 +1546,7 @@ class TwoQubit_RB(Sequence):
 
         qubit_state = np.matmul(self.evaluate_sequence(
             gate_seq_1, gate_seq_2, gate_seq_Cplr = gate_seq_Cplr, generator = generator), qubit_state)
-
+        log.info('qubit_state: {}'.format(qubit_state))
         # find recovery gate which makes qubit_state return to initial state
         total_num_cliffords = 11520
         recovery_seq_1 = []
@@ -1597,6 +1622,8 @@ class TwoQubit_RB(Sequence):
             # Calculate the matrix of the total clifford sequence
             matrix_total = np.matmul(matrix_recovery,matrix_cliffords)
             if (CheckIdentity(matrix_total)):
+                # log.info('matrix_total: {}'.format(matrix_total))
+                log.info('recovery_seq_1: {}, recovery_seq_2: {}, recovery_seq_Cplr: {}'.format(recovery_seq_1, recovery_seq_2, recovery_seq_Cplr))
                 if (find_cheapest == True):
                     # Less 2QB Gates, Less 1QB Gates, and More I Gates = the cheapest gates.
                     # The priority: less 2QB gates > less 1QB gates > more I gates
