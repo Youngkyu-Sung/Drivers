@@ -170,6 +170,9 @@ def Gate_to_strGate(_Gate):
         str_Gate = 'iSWAP_Cplr_Z_ahead'
     elif (_Gate == gates.iSWAP_Cplr_Z_behind):
         str_Gate = 'iSWAP_Cplr_Z_behind'
+    elif (_Gate == gates.Sep):
+        str_Gate = 'Separator'
+
 
     return str_Gate
 

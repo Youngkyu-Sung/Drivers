@@ -843,8 +843,8 @@ class SequenceToWaveforms:
                 self._wave_xy[n][:] = 0.0
 
         # apply phase offset
-        for n in range(self.n_qubit):
-            self._wave_xy[n] = self._wave_xy[n] * np.exp(1j*self.phase_offsets[n]/180.0*np.pi)
+        # for n in range(self.n_qubit):
+        #     self._wave_xy[n] = self._wave_xy[n] * np.exp(1j*self.phase_offsets[n]/180.0*np.pi)
         # log.info('before predistortion, _wave_z max is {}'.format(np.max(self._wave_z)))
         # if self.compensate_crosstalk:
         #     self._perform_crosstalk_compensation()
@@ -1096,77 +1096,111 @@ class SequenceToWaveforms:
         # 4. if there is Euler Z, then convert it into the Euler rotations
         # 5. build un new sequence list 
 
-        # find where 2qb locates
-        list_2qb_gate_indicies = list()
-        list_steps_2qb_gate = list()
+        # find where separator locates
+        list_separator_indicies = list()
+        log.info('self.sequence_list: {}'.format(self.sequence_list))
         for n in range(len(self.sequence_list)):
             step = self.sequence_list[n]
-            if (isinstance(step.gates[1].gate, gates.ZGate_Cplr_iSWAP) or
-               isinstance(step.gates[1].gate, gates.ZGate_Cplr_CZ)) :
-                list_2qb_gate_indicies.append(n)
-                list_steps_2qb_gate.append(step)
-
-
-        # split sequence into sub-sequence by two qubit gates. 
+            if (isinstance(step.gates[1].gate, gates.Separator)) :
+                list_separator_indicies.append(n)
+        # log.info('list_separator_indicies: {}'.format(list_separator_indicies))
+        # Split the sequence into subsequences by separators
         list_subseqs = list()
-        step_readout = None
-        for j in range(len(list_2qb_gate_indicies)+1):
+        for j in range(len(list_separator_indicies)+1):
             if j == 0:
-                if len(list_2qb_gate_indicies) == 0: #there is no 2qb gates.
+                if len(list_separator_indicies) == 0: #there is no separator
                     if isinstance(self.sequence_list[-1].gates[0].gate, gates.ReadoutGate):
                         list_subseqs.append(self.sequence_list[:-1])
                         step_readout = self.sequence_list[-1]
                     else:
-                        list_subseqs.append(self.sequence_list)     
+                        list_subseqs.append(self.sequence_list[:])     
 
                 else:
-                    list_subseqs.append(self.sequence_list[:list_2qb_gate_indicies[j]])
+                    list_subseqs.append(self.sequence_list[1:list_separator_indicies[j]])
 
-            elif j == len(list_2qb_gate_indicies):
+            elif j == len(list_separator_indicies):
                 # log.info(self.sequence_list[-1])
                 if isinstance(self.sequence_list[-1].gates[0].gate, gates.ReadoutGate):
-                    list_subseqs.append(self.sequence_list[list_2qb_gate_indicies[j-1]+1:-1])
+                    list_subseqs.append(self.sequence_list[list_separator_indicies[j-1]+1:-1])
                     step_readout = self.sequence_list[-1]
                 else:
-                    list_subseqs.append(self.sequence_list[list_2qb_gate_indicies[j-1]+1:])
+                    list_subseqs.append(self.sequence_list[list_separator_indicies[j-1]+1:])
 
             else:
-                list_subseqs.append(self.sequence_list[list_2qb_gate_indicies[j-1]+1: list_2qb_gate_indicies[j]])
+                list_subseqs.append(self.sequence_list[list_separator_indicies[j-1]+1: list_separator_indicies[j]])
+
         log.info('list_subseqs:{}'.format(list_subseqs))
-        # find which sub-sequence has eulerZ gates
+        # for each subsequences, find where 2qb locates
+        list_list_2qb_gate_indicies = list()
+        list_list_steps_2qb_gate = list()
+        for n in range(len(list_subseqs)):
+            list_2qb_gate_indicies = list()
+            list_steps_2qb_gate = list()
+            for j in range(len(list_subseqs[n])):
+                step = list_subseqs[n][j]
+                if (isinstance(step.gates[1].gate, gates.ZGate_Cplr_iSWAP) or
+                   isinstance(step.gates[1].gate, gates.ZGate_Cplr_CZ)) :
+                    list_2qb_gate_indicies.append(j)
+                    list_steps_2qb_gate.append(step)
+            list_list_2qb_gate_indicies.append(list_2qb_gate_indicies)
+            list_list_steps_2qb_gate.append(list_steps_2qb_gate)
+        # log.info('list_list_2qb_gate_indicies:{}'.format(list_list_2qb_gate_indicies))
+
+        # split sequence into sub-sub-sequence by two qubit gates. 
+        list_subsubseqs = list()
+        list_2qb_gate_indicies = list()
+        list_steps_2qb_gate = [item for sublist in list_list_steps_2qb_gate for item in sublist]
+        for n in range(len(list_subseqs)):
+            for j in range(len(list_list_2qb_gate_indicies[n])+1):
+                # log.info('n: {}, j: {}, len(list_list_2qb_gate_indicies): {}'.format(n,j, len(list_list_2qb_gate_indicies[n])))
+                if j == 0:
+                    if len(list_list_2qb_gate_indicies[n]) == 0: #there is no 2qb gates in the subseq
+                        list_subsubseqs.append(list_subseqs[n])     
+                    else:
+                        list_subsubseqs.append(list_subseqs[n][:list_list_2qb_gate_indicies[n][j]])
+                        list_2qb_gate_indicies.append(len(list_subsubseqs)-1)
+                elif j == len(list_list_2qb_gate_indicies[n]):
+                    list_subsubseqs.append(list_subseqs[n][list_list_2qb_gate_indicies[n][j-1]+1:])
+                    # log.info('HELLO!')
+                else:
+                    list_subsubseqs.append(list_subseqs[n][list_list_2qb_gate_indicies[n][j-1]+1: list_list_2qb_gate_indicies[n][j]])
+                    list_2qb_gate_indicies.append(len(list_subsubseqs)-1)
+
+        # log.info('list_subsubseqs:{}'.format(list_subsubseqs))
+        # log.info('list_2qb_gate_indicies:{}'.format(list_2qb_gate_indicies))
+        # log.info('len(list_steps_2qb_gate): {}'.format(len(list_steps_2qb_gate)))
+
+        #find which sub-sub-sequence has eulerZ gates
         list_eulerz_indices = list()
-        for k in range(len(list_subseqs)):
+        for k in range(len(list_subsubseqs)):
             eulerz_found = False
-            for l in range(len(list_subseqs[k])):
-                step = list_subseqs[k][l] 
+            for l in range(len(list_subsubseqs[k])):
+                step = list_subsubseqs[k][l] 
                 if isinstance(step.gates[0].gate, gates.EulerZGate):
                     if not eulerz_found:
                         list_eulerz_indices.append(k)
-                        log.info('eulerz append: {}'.format(k))
+                        # log.info('eulerz append: {}'.format(k))
                     eulerz_found = True
-            if ((not eulerz_found) and len(list_subseqs[k])>3):
-                # if the number of single qubit gates more than 3, consider rewrite in euler-format
-                list_eulerz_indices.append(k)
-                eulerz_found = True
+        # log.info('list_eulerz_indices:{}'.format(list_eulerz_indices))
 
-        # for sub-sequence having euler-Z gates, convert them into XYX-convention
-        list_subseqs_eulerz = list()
+        # for sub-sub-sequence having euler-Z gates, convert them into XYX-convention
+        list_subsubseqs_eulerz = list()
         for index in list_eulerz_indices:
-            subseq = list_subseqs[index]
+            subsubseq = list_subsubseqs[index]
 
-            log.info('subseq in euler_z: {}'.format(subseq))
-            len_seq = len(subseq)
+            # log.info('subsubseq in euler_z: {}'.format(subsubseq))
+            len_seq = len(subsubseq)
             list_qb1_gates = list()
             list_qb2_gates = list()
             for m in range(len_seq):
-                for gate_on_qb in (subseq[m].gates):
+                for gate_on_qb in (subsubseq[m].gates):
                     if gate_on_qb.qubit == 0:
                         list_qb1_gates.append(gate_on_qb.gate)
                     elif gate_on_qb.qubit == 2:
                         list_qb2_gates.append(gate_on_qb.gate)
-            print('list_qb1_gates: {}'.format(list_qb1_gates))
+            # print('list_qb1_gates: {}'.format(list_qb1_gates))
             list_qb1_euler_gates = gate_to_euler_gates(list_qb1_gates, convention = 'x-y-x')
-            print('list_qb2_gates: {}'.format(list_qb2_gates))
+            # print('list_qb2_gates: {}'.format(list_qb2_gates))
             list_qb2_euler_gates = gate_to_euler_gates(list_qb2_gates, convention = 'x-y-x')
             subseq_eulerz = []
             for m in range(3):
@@ -1175,31 +1209,140 @@ class SequenceToWaveforms:
                 step.add_gate(1,gates.IdentityGate(width = None))
                 step.add_gate(2,list_qb2_euler_gates[m])
                 subseq_eulerz.append(step)
-            list_subseqs_eulerz.append(subseq_eulerz)
+            list_subsubseqs_eulerz.append(subseq_eulerz)
 
-        # build-up the sequence
+        # # build-up the sequence
         new_sequence_list = list()
         cnt_eulerz = 0
         cnt_2qb_gate = 0
-        for j, subseq in enumerate(list_subseqs):
-            log.info("j: {}, list_eulerz_indices: {}".format(j, list_eulerz_indices))
+        for j, subsubseq in enumerate(list_subsubseqs):
+            # log.info("j: {}, list_eulerz_indices: {}".format(j, list_eulerz_indices))
             if j in list_eulerz_indices:
                 # print(list_subseqs_eulerz[cnt])
-                log.info('%d / %d'%(cnt_eulerz, len(list_subseqs_eulerz)))
-                log.info('extend for new_sequence_list: {}'.format(list_subseqs_eulerz[cnt_eulerz]))
-                new_sequence_list.extend(list_subseqs_eulerz[cnt_eulerz])
+                # log.info('cnt_eulerz: %d / %d'%(cnt_eulerz, len(list_eulerz_indices)))
+                # log.info('extend for new_sequence_list: {}'.format(list_subseqs_eulerz[cnt_eulerz]))
+                new_sequence_list.extend(list_subsubseqs_eulerz[cnt_eulerz])
                 cnt_eulerz += 1
             else:
-                new_sequence_list.extend(subseq)
-            if j != len(list_subseqs)-1:
+                new_sequence_list.extend(subsubseq)
+
+            if j in list_2qb_gate_indicies:
+                # log.info('cnt_2qb gate: %d / %d'%(cnt_2qb_gate, len(list_2qb_gate_indicies)))
                 new_sequence_list.append(list_steps_2qb_gate[cnt_2qb_gate])
                 cnt_2qb_gate +=1
+
         if step_readout is not None:
             new_sequence_list.append(step_readout)
 
-        log.info('sequence_list (before): {}'.format(self.sequence_list))
+        # log.info('sequence_list (before): {}'.format(self.sequence_list))
         self.sequence_list = new_sequence_list
-        log.info('sequence_list (after): {}'.format(self.sequence_list))
+        # log.info('sequence_list (after): {}'.format(self.sequence_list))
+
+        # old method
+        # # find where 2qb locates
+        # list_2qb_gate_indicies = list()
+        # list_steps_2qb_gate = list()
+        # for n in range(len(self.sequence_list)):
+        #     step = self.sequence_list[n]
+        #     if (isinstance(step.gates[1].gate, gates.ZGate_Cplr_iSWAP) or
+        #        isinstance(step.gates[1].gate, gates.ZGate_Cplr_CZ)) :
+        #         list_2qb_gate_indicies.append(n)
+        #         list_steps_2qb_gate.append(step)
+
+        # Do not split the sequence into subsequences by two qubit gates   
+        # # split sequence into sub-sequence by two qubit gates. 
+        # list_subseqs = list()
+        # step_readout = None
+        # for j in range(len(list_2qb_gate_indicies)+1):
+        #     if j == 0:
+        #         if len(list_2qb_gate_indicies) == 0: #there is no 2qb gates.
+        #             if isinstance(self.sequence_list[-1].gates[0].gate, gates.ReadoutGate):
+        #                 list_subseqs.append(self.sequence_list[:-1])
+        #                 step_readout = self.sequence_list[-1]
+        #             else:
+        #                 list_subseqs.append(self.sequence_list)     
+
+        #         else:
+        #             list_subseqs.append(self.sequence_list[:list_2qb_gate_indicies[j]])
+
+        #     elif j == len(list_2qb_gate_indicies):
+        #         # log.info(self.sequence_list[-1])
+        #         if isinstance(self.sequence_list[-1].gates[0].gate, gates.ReadoutGate):
+        #             list_subseqs.append(self.sequence_list[list_2qb_gate_indicies[j-1]+1:-1])
+        #             step_readout = self.sequence_list[-1]
+        #         else:
+        #             list_subseqs.append(self.sequence_list[list_2qb_gate_indicies[j-1]+1:])
+
+        #     else:
+        #         list_subseqs.append(self.sequence_list[list_2qb_gate_indicies[j-1]+1: list_2qb_gate_indicies[j]])
+        # log.info('list_subseqs:{}'.format(list_subseqs))
+        # find which sub-sequence has eulerZ gates
+        # list_eulerz_indices = list()
+        # for k in range(len(list_subseqs)):
+        #     eulerz_found = False
+        #     for l in range(len(list_subseqs[k])):
+        #         step = list_subseqs[k][l] 
+        #         if isinstance(step.gates[0].gate, gates.EulerZGate):
+        #             if not eulerz_found:
+        #                 list_eulerz_indices.append(k)
+        #                 log.info('eulerz append: {}'.format(k))
+        #             eulerz_found = True
+        #     if ((not eulerz_found) and len(list_subseqs[k])>3):
+        #         # if the number of single qubit gates more than 3, consider rewrite in euler-format
+        #         list_eulerz_indices.append(k)
+        #         eulerz_found = True
+
+        # # for sub-sequence having euler-Z gates, convert them into XYX-convention
+        # list_subseqs_eulerz = list()
+        # for index in list_eulerz_indices:
+        #     subseq = list_subseqs[index]
+
+        #     log.info('subseq in euler_z: {}'.format(subseq))
+        #     len_seq = len(subseq)
+        #     list_qb1_gates = list()
+        #     list_qb2_gates = list()
+        #     for m in range(len_seq):
+        #         for gate_on_qb in (subseq[m].gates):
+        #             if gate_on_qb.qubit == 0:
+        #                 list_qb1_gates.append(gate_on_qb.gate)
+        #             elif gate_on_qb.qubit == 2:
+        #                 list_qb2_gates.append(gate_on_qb.gate)
+        #     print('list_qb1_gates: {}'.format(list_qb1_gates))
+        #     list_qb1_euler_gates = gate_to_euler_gates(list_qb1_gates, convention = 'x-y-x')
+        #     print('list_qb2_gates: {}'.format(list_qb2_gates))
+        #     list_qb2_euler_gates = gate_to_euler_gates(list_qb2_gates, convention = 'x-y-x')
+        #     subseq_eulerz = []
+        #     for m in range(3):
+        #         step = Step()
+        #         step.add_gate(0,list_qb1_euler_gates[m])
+        #         step.add_gate(1,gates.IdentityGate(width = None))
+        #         step.add_gate(2,list_qb2_euler_gates[m])
+        #         subseq_eulerz.append(step)
+        #     list_subseqs_eulerz.append(subseq_eulerz)
+
+        # # build-up the sequence
+        # new_sequence_list = list()
+        # cnt_eulerz = 0
+        # cnt_2qb_gate = 0
+        # for j, subseq in enumerate(list_subseqs):
+        #     log.info("j: {}, list_eulerz_indices: {}".format(j, list_eulerz_indices))
+        #     if j in list_eulerz_indices:
+        #         # print(list_subseqs_eulerz[cnt])
+        #         log.info('%d / %d'%(cnt_eulerz, len(list_subseqs_eulerz)))
+        #         log.info('extend for new_sequence_list: {}'.format(list_subseqs_eulerz[cnt_eulerz]))
+        #         new_sequence_list.extend(list_subseqs_eulerz[cnt_eulerz])
+        #         cnt_eulerz += 1
+        #     else:
+        #         new_sequence_list.extend(subseq)
+        #     if j != len(list_subseqs)-1:
+        #         new_sequence_list.append(list_steps_2qb_gate[cnt_2qb_gate])
+        #         cnt_2qb_gate +=1
+        # if step_readout is not None:
+        #     new_sequence_list.append(step_readout)
+
+        # log.info('sequence_list (before): {}'.format(self.sequence_list))
+        # self.sequence_list = new_sequence_list
+        # log.info('sequence_list (after): {}'.format(self.sequence_list))
 
     def _perform_virtual_z_iswap(self):
         # log.info('_perform_virtual_z_iswap, n_qubit: {}'.format(self.n_qubit))
@@ -1615,6 +1758,8 @@ class SequenceToWaveforms:
                         delay = self.wave_xy_delays[q]
                         start = self._round(step.t_start + delay)
                         end = self._round(step.t_end + delay)
+                        # start = step.t_start + delay
+                        # end = step.t_end + delay
                         indices = np.arange(
                             max(np.floor(start * self.sample_rate), 0),
                             min(
@@ -1644,7 +1789,7 @@ class SequenceToWaveforms:
                         # log.info('mw crosstalk scaling_factor: {}'.format(scaling_factor))
                         waveform[indices] += (
                             scaling_factor
-                            * gate.pulse.calculate_waveform(t0, t))
+                            * gate.pulse.calculate_waveform(t0, t+delay)) #######CHANGE
 
                 else:
                     # calculate the pulse waveform for the selected indices
@@ -1747,6 +1892,7 @@ class SequenceToWaveforms:
                 pulse.amplitude = config.get('Amplitude')
             else:
                 pulse.amplitude = config.get('Amplitude #%d' % m)
+                pulse.amplitude_half = config.get('Amplitude half #%d' % m)
 
             # pulse-specific parameters
             pulse.frequency = config.get('Frequency #%d' % m)

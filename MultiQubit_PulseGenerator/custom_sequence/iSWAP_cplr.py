@@ -30,8 +30,8 @@ class CustomSequence(Sequence):
 			# 		self.add_gate(qubit=[0,1,2], gate = gates.iSWAP_Cplr_opposite)
 			# else:
 				# self.add_gate(qubit=[0,1,2], gate=gates.iSWAP_Cplr)
-			# self.add_gate(qubit=[0,1,2], gate=gates.iSWAP_Cplr_Z_behind)
-			self.add_gate(qubit=[0,1,2], gate=gates.iSWAP_Cplr_Z_ahead)
+			self.add_gate(qubit=[0,1,2], gate=gates.iSWAP_Cplr_Z_behind)
+			# self.add_gate(qubit=[0,1,2], gate=gates.iSWAP_Cplr_Z_ahead)
 			log.info('iSWAP CPLR_Z ahead!')
 			self.add_gate_to_all(gates.IdentityGate(width = pulse_spacing))
 			# self.add_gate(0, gates.X2p)

@@ -1147,6 +1147,18 @@ class TwoQubit_RB(Sequence):
                 # log.info('Seed number: %d'%(randomize))
                 rndnum = rnd.randint(0, 11519)
                 # rndnum = rnd.randint(0, 576) #Only applying single qubit gates
+                if generator == 'iSWAP_Cplr':
+                    cliffordSeq1.append(gates.Sep)
+                    cliffordSeq2.append(gates.Sep)
+                    cliffordSeqCplr.append(gates.Sep)
+
+                if interleave == True:
+                    if interleaved_gate == 'iSWAP_Cplr': #we interleave gate ahead of the clifford seq
+                        gate = gates.iSWAP_Cplr_Z_behind
+                        cliffordSeq1.append(gates.I)
+                        cliffordSeqCplr.append(gates.iSWAP_Cplr_Z_behind)
+                        cliffordSeq2.append(gates.I)
+
                 add_twoQ_clifford(rndnum, cliffordSeq1, cliffordSeq2, gate_seq_Cplr = cliffordSeqCplr, generator = generator)
                 # If interleave gate,
                 if interleave is True:
@@ -1160,12 +1172,12 @@ class TwoQubit_RB(Sequence):
                         for g in gate.sequence:
                             cliffordSeq1.append(g[1])
                             cliffordSeq2.append(g[0])
-                    elif interleaved_gate == 'iSWAP_Cplr':
-                        gate = gates.iSWAP_Cplr_Z_behind
-                        cliffordSeq1.append(gates.I)
-                        # cliffordSeqCplr.append(gates.iSWAP_Cplr)
-                        cliffordSeqCplr.append(gates.iSWAP_Cplr_Z_behind)
-                        cliffordSeq2.append(gates.I)
+                    # elif interleaved_gate == 'iSWAP_Cplr': we interleave gate not backward / but forward
+                    #     gate = gates.iSWAP_Cplr_Z_ahead
+                    #     cliffordSeq1.append(gates.I)
+                    #     # cliffordSeqCplr.append(gates.iSWAP_Cplr)
+                    #     cliffordSeqCplr.append(gates.iSWAP_Cplr_Z_ahead)
+                    #     cliffordSeq2.append(gates.I)
                     elif interleaved_gate == 'CZ_Cplr':
                         gate = gates.CZ_Cplr
                         cliffordSeq1.append(gates.I)
@@ -1786,8 +1798,8 @@ class TwoQubit_XEB(Sequence):
                     pass
                 elif generator == 'iSWAP_Cplr':
                     gateSeq1.append(gates.I)
-                    # gateSeqCplr.append(gates.iSWAP_Cplr)
-                    gateSeqCplr.append(gates.iSWAP_Cplr_Z_ahead)
+                    gateSeqCplr.append(gates.iSWAP_Cplr)
+                    # gateSeqCplr.append(gates.iSWAP_Cplr_Z_ahead)
                     gateSeq2.append(gates.I)
                 elif generator == 'CZ_Cplr':
                     gateSeq1.append(gates.I)

@@ -55,7 +55,10 @@ class SingleQubitXYRotation(OneQubitGate):
         pulse = copy(pulse)
         pulse.phase = self.phi
         # pi pulse correspond to the full amplitude
-        pulse.amplitude *= self.theta / np.pi
+        if np.abs(self.theta) == 0.5 * np.pi:
+            pulse.amplitude = pulse.amplitude_half # This is to fine-tune pi/2 pulses..
+        else:
+            pulse.amplitude *= self.theta / np.pi
         return pulse
 
     def __str__(self):
@@ -193,6 +196,26 @@ class SingleQubitZRotation(OneQubitGate):
             return False
         return True
 
+
+class Separator(OneQubitGate):
+    """Separator.
+
+    Does nothing to the qubit. This is to separate cliffords in iSWAP RB
+
+    Parameters
+    ----------
+
+    """
+
+    def __init__(self,  name=None):
+        self.name = name
+    def __str__(self):
+        if self.name is None:
+            return "Separator"
+        else:
+            return self.name
+    def __str__(self):
+        return "Separator"
 
 class IdentityGate(OneQubitGate):
     """Identity gate.
@@ -542,7 +565,10 @@ class iSWAP_Cplr_with_Z_behind(CompositeGate):
         self.phi1 = phi1
         self.phi2 = phi2
         self.add_gate([IdentityGate(width = 0), ZGate_Cplr_iSWAP(), ZGate_TQB_iSWAP()])
-        self.add_gate([EulerZGate(self.phi1), IdentityGate(width = 0), EulerZGate(self.phi2)])
+        if self.phi1 == 0 and self.phi2 == 0:
+            pass
+        else:
+            self.add_gate([EulerZGate(self.phi1), IdentityGate(width = 0), EulerZGate(self.phi2)])
 
 
     def new_angles(self, phi1, phi2):
@@ -580,7 +606,10 @@ class iSWAP_Cplr_with_Z_ahead(CompositeGate):
         self.phi1 = phi1
         self.phi2 = phi2
         self.add_gate([EulerZGate(self.phi1), IdentityGate(width = 0), EulerZGate(self.phi2)])
-        self.add_gate([IdentityGate(width = 0), ZGate_Cplr_iSWAP(), ZGate_TQB_iSWAP()])
+        if self.phi1 == 0 and self.phi2 == 0:
+            pass
+        else:
+            self.add_gate([IdentityGate(width = 0), ZGate_Cplr_iSWAP(), ZGate_TQB_iSWAP()])
 
 
     def new_angles(self, phi1, phi2):
@@ -741,7 +770,7 @@ VZ2m = VirtualZGate(np.pi / 2, name='VZ2m')
 
 # Euler-angle Z gates
 EulerZ = EulerZGate(0, name='EulerZ') 
-
+Sep = Separator(name='Separator')
 # two-qubit gates
 CPh = CPHASE()
 

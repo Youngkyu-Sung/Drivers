@@ -48,6 +48,7 @@ class Pulse:
         # set variables
         self.amplitude = 0.5
         self.amplitude_opposite = -0.5
+        self.amplitude_half = 0.25 # This is to define pi/2 pulses. by default it is half of the amplitude
         self.width = 10E-9
         self.width_opposite = 0
         self.plateau = 0.0
@@ -127,7 +128,6 @@ class Pulse:
             y = y + 1j * beta * np.gradient(y)
             y = y * np.exp(1j * 2 * np.pi * self.drag_detuning *
                            (t - t0 + self.total_duration() / 2))
-
         if self.complex:
             # Apply phase and SSB
             phase = self.phase
@@ -290,6 +290,7 @@ class Cosine(Pulse):
         return self.width + self.plateau
 
     def calculate_envelope(self, t0, t):
+        # log.info('t0: {}'.format(t0))
         tau = self.width
         if self.plateau == 0:
             values = (1 / 2 *
