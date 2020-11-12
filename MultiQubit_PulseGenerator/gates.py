@@ -55,10 +55,12 @@ class SingleQubitXYRotation(OneQubitGate):
         pulse = copy(pulse)
         pulse.phase = self.phi
         # pi pulse correspond to the full amplitude
-        if np.abs(self.theta) == 0.5 * np.pi:
-            pulse.amplitude = pulse.amplitude_half # This is to fine-tune pi/2 pulses..
-        else:
-            pulse.amplitude *= self.theta / np.pi
+        # if self.theta == 0.5 * np.pi:
+        #     pulse.amplitude = pulse.amplitude_half # This is to fine-tune pi/2 pulses..
+        # elif self.theta == -0.5 * np.pi:
+        #     pulse.amplitude = -pulse.amplitude_half # This is to fine-tune pi/2 pulses..
+        # else:
+        pulse.amplitude *= self.theta / np.pi
         return pulse
 
     def __str__(self):
