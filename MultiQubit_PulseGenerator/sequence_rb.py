@@ -239,7 +239,7 @@ def add_singleQ_S1_Z2p(index, gate_seq):
     elif index == 1:
         gate_seq.append(gates.Y2p)
         # gate_seq.append(gates.I)  # auxiliary
-        gate_seq.append(gates.X)
+        gate_seq.append(gates.Xp)
         gate_seq.append(gates.I)  # auxiliary
     elif index == 2:
         gate_seq.append(gates.X2m)

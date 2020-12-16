@@ -138,19 +138,22 @@ def gate_to_euler_gates(list_1qb_gates, convention = 'x-y-x'):
         if np.abs(phi) > threshold:
             X1 = gates.SingleQubitXYRotation(phi=0, theta=phi, name='X={:+.2f}'.format(phi))
         else:
-            X1 = gates.IdentityGate(width=None)
+            X1 = gates.IdentityGate(width=70e-9)
+            # X1 = gates.IdentityGate(width=None)
 
         # second Y-gate
         if np.abs(theta) > threshold:
             Y2 = gates.SingleQubitXYRotation(phi=np.pi*0.5, theta=theta, name='Y={:+.2f}'.format(theta))
         else:
-            Y2 = gates.IdentityGate(width=None)
+            Y2 = gates.IdentityGate(width=70e-9)
+            # Y2 = gates.IdentityGate(width=None)
 
         # third X-gate
         if np.abs(psi) > threshold:
             X3 = gates.SingleQubitXYRotation(phi=0, theta=psi, name='X={:+.2f}'.format(psi))
         else:
-            X3 = gates.IdentityGate(width=None)
+            X3 = gates.IdentityGate(width=70e-9)
+            # X3 = gates.IdentityGate(width=None)
         return [X1, Y2, X3]
 
     elif convention == 'y-x-y':
@@ -158,19 +161,22 @@ def gate_to_euler_gates(list_1qb_gates, convention = 'x-y-x'):
         if np.abs(phi) > threshold:
             Y1 = gates.SingleQubitXYRotation(phi=np.pi*0.5, theta=phi, name='Y={:+.2f}'.format(phi))
         else:
-            Y1 = gates.IdentityGate(width=None)
+            Y1 = gates.IdentityGate(width=70e-9)
+            # Y1 = gates.IdentityGate(width=None)
 
         # second X-gate
         if np.abs(theta) > threshold:
             X2 = gates.SingleQubitXYRotation(phi=0, theta=theta, name='X={:+.2f}'.format(theta))
         else:
-            X2 = gates.IdentityGate(width=None)
+            X2 = gates.IdentityGate(width=70e-9)
+            # X2 = gates.IdentityGate(width=None)
 
         # third Y-gate
         if np.abs(psi) > threshold:
             Y3 = gates.SingleQubitXYRotation(phi=np.pi*0.5, theta=psi, name='Y={:+.2f}'.format(psi))
         else:
-            Y3 = gates.IdentityGate(width=None)
+            Y3 = gates.IdentityGate(width=70e-9)
+            # Y3 = gates.IdentityGate(width=None)
         return [Y1, X2, Y3]
 
 def gate_to_euler_angles(list_1qb_gates, convention = 'x-y-x'):
