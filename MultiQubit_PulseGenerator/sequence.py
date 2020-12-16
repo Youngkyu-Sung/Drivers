@@ -46,87 +46,63 @@ def rotation_matrix(axis, theta):
                      [2 * (bc - ad), aa + cc - bb - dd, 2 * (cd + ab)],
                      [2 * (bd + ac), 2 * (cd - ab), aa + dd - bb - cc]])
 
+def get_nonzero_num(arr, threshold = 1e-8):
+    # return how many non-zero values in arr
+    return len(np.nonzero(np.abs(np.asarray(arr)) > threshold)[0])
+
 def mat_to_euler_angles_xyx(matrix):
     # find euler angles (x-y-x) give 3d rotation matrix
     threshold = 1e-8
     theta = np.arccos(np.clip(matrix[0,0],-1,1))
     if np.abs(np.sin(theta)) < threshold: 
-        # is theta np.pi or zero?
         phi = 0
         psi = np.arctan2(matrix[2,1],matrix[1,1])
-        # if np.abs(theta) < threshold:
-        #     # if theta = 0, one X gate is enough
-        #     phi = 0
-        #     # with np.errstate(divide='ignore'):  # ignore runtimewarning (divide by zero)
-        #     #     psi = np.arctan(matrix[2,1]/matrix[1,1])
-        #     psi = np.arctan2(matrix[2,1],matrix[1,1])
-
-        #     # if np.abs(np.sin(psi)) < threshold:
-        #     #     # distinguish psi np.pi vs zero.
-        #     #     psi = np.arccos(np.clip(matrix[1,1],-1,1))
-        # else:
-        #     # if theta = pi
-        #     phi = 0
-        #     psi = np.arccos(np.clip(matrix[1,1],-1,1))
 
     elif np.abs(np.cos(theta)) < threshold:
-        # log.info("HELLO!")
-        # is theta +np.pi/2 or -np.pi/2?
-        # calcualte phi, psi
-        phi = np.arctan2(matrix[0,1], matrix[0,2])
-        psi = np.arctan2(matrix[1,0], -matrix[2,0])
+        # theta can be either +np.pi/2 or -np.pi/2 -> choose the one that gives more identity gates.
+        # 1) theta_p = + np.pi/2
+        theta_p = np.abs(theta)
+        phi_p = np.arctan2(matrix[0,1], matrix[0,2])
+        psi_p = np.arctan2(matrix[1,0], -matrix[2,0])
+        num_non_zeros_p = get_nonzero_num([phi_p, theta_p, psi_p]) #len(np.nonzero([phi_p,theta_p,psi_p])[0])
 
-        if ((np.abs(matrix[1,0])>threshold) and (np.abs(np.sin(psi)) > 0)):
-            theta = np.arcsin(np.clip(matrix[1,0]/np.sin(psi),-1,1))
-        elif ((np.abs(matrix[2,0])>threshold) and (np.abs(np.cos(psi)) > 0)):
-            theta = np.arcsin(-np.clip(matrix[2,0]/np.cos(psi),-1,1))
+        # 1) theta_m = -np.pi/2
+        theta_m = -np.abs(theta)
+        phi_m = np.arctan2(-matrix[0,1], -matrix[0,2])
+        psi_m = np.arctan2(-matrix[1,0], +matrix[2,0])
+        num_non_zeros_m = get_nonzero_num([phi_m, theta_m, psi_m])#len(np.nonzero([phi_m,theta_m,psi_m])[0])
+        
+        if num_non_zeros_p > num_non_zeros_m:
+            phi = phi_m
+            theta = theta_m
+            psi = psi_m
         else:
-            raise ValueError('Singular Matrix, matrix: {}'.format(matrix))
+            phi = phi_p
+            theta = theta_p
+            psi = psi_p
     else:
-        #is theta positive / negative?
-
-        phi = np.arctan2(matrix[0,1], matrix[0,2])
-        psi = np.arctan2(matrix[1,0], -matrix[2,0])
-        # with np.errstate(divide='ignore'):  # ignore runtimewarning (divide by zero)
-        #     phi = np.arctan(matrix[0,1]/matrix[0,2])
-        #     psi = np.arctan(-matrix[1,0]/matrix[2,0])
-
-        sign_theta = None
-        if np.abs(np.cos(phi)) > threshold:
-            sign_theta = np.sign(matrix[0,2]/np.cos(phi))
-        # elif np.abs(np.sin(phi))> threshold:
-        #     sign_theta = np.sign(matrix[0,1]/np.sin(phi))
-        # print('sign from phi: {}'.format(sign_theta))
-        if np.abs(np.cos(psi)) > threshold:
-            sign_theta = np.sign(-matrix[2,0]/np.cos(psi))
-
-        if sign_theta is None:
-            pass
-        elif sign_theta > 0:
-            theta = np.abs(theta)
+        # theta can be either positive or negative -> choose the one that gives more identity gates.
+        # 1) theta_p = positive
+        theta_p = np.abs(theta)
+        phi_p = np.arctan2(matrix[0,1], matrix[0,2])
+        psi_p = np.arctan2(matrix[1,0], -matrix[2,0])
+        num_non_zeros_p =  get_nonzero_num([phi_p, theta_p, psi_p]) # len(np.nonzero([phi_p,theta_p,psi_p])[0])
+        # 2) theta = negative
+        theta_m = -np.abs(theta)
+        phi_m = np.arctan2(-matrix[0,1], -matrix[0,2])
+        psi_m = np.arctan2(-matrix[1,0], matrix[2,0])
+        num_non_zeros_m =  get_nonzero_num([phi_m, theta_m, psi_m])#len(np.nonzero([phi_m,theta_m,psi_m])[0])
+        
+        if num_non_zeros_p > num_non_zeros_m:
+            phi = phi_m
+            theta = theta_m
+            psi = psi_m
         else:
-            theta = -np.abs(theta)
+            phi = phi_p
+            theta = theta_p
+            psi = psi_p
 
-        # if (np.abs(matrix[0,2]) < threshold):
-        #     phi = np.arcsin(np.clip(matrix[0,1]/np.sin(theta),-1,1))
-
-        # if (np.abs(matrix[2,0]) < threshold):
-        #     psi = np.arcsin(np.clip(matrix[1,0]/np.sin(theta),-1,1))
-
-    # print('phi(X): {}, theta(Y): {}, psi(X): {}'.format(phi/np.pi*180, theta/np.pi*180, psi/np.pi*180))
-    return (phi, theta, psi)
-
-def mat_to_euler_angles_yxy(matrix):
-    # find euler angles (y-x-y) give 3d rotation matrix
-    theta = np.arccos(np.clip(matrix[1,1],-1,1))
-    if theta == 0: # only X gate is enough
-        phi = np.arccos(np.clip(matrix[1,1],-1,1))
-        psi = 0
-    else:
-        with np.errstate(divide='ignore'): # ignore runtimewarning (divide by zero)
-            phi = np.arctan(-matrix[1,0]/matrix[1,2])
-            psi = np.arctan(matrix[0,1]/matrix[2,1])
-    # print('phi(Y): {}, theta(X): {}, psi(Y): {}'.format(phi/np.pi*180, theta/np.pi*180, psi/np.pi*180))
+    print('phi(X): {}, theta(Y): {}, psi(X): {}'.format(phi/np.pi*180, theta/np.pi*180, psi/np.pi*180))
     return (phi, theta, psi)
 
 def gate_to_euler_gates(list_1qb_gates, convention = 'x-y-x'):
@@ -138,21 +114,21 @@ def gate_to_euler_gates(list_1qb_gates, convention = 'x-y-x'):
         if np.abs(phi) > threshold:
             X1 = gates.SingleQubitXYRotation(phi=0, theta=phi, name='X={:+.2f}'.format(phi))
         else:
-            X1 = gates.IdentityGate(width=70e-9)
+            X1 = gates.IdentityGate(width=700e-9)
             # X1 = gates.IdentityGate(width=None)
 
         # second Y-gate
         if np.abs(theta) > threshold:
             Y2 = gates.SingleQubitXYRotation(phi=np.pi*0.5, theta=theta, name='Y={:+.2f}'.format(theta))
         else:
-            Y2 = gates.IdentityGate(width=70e-9)
+            Y2 = gates.IdentityGate(width=700e-9)
             # Y2 = gates.IdentityGate(width=None)
 
         # third X-gate
         if np.abs(psi) > threshold:
             X3 = gates.SingleQubitXYRotation(phi=0, theta=psi, name='X={:+.2f}'.format(psi))
         else:
-            X3 = gates.IdentityGate(width=70e-9)
+            X3 = gates.IdentityGate(width=700e-9)
             # X3 = gates.IdentityGate(width=None)
         return [X1, Y2, X3]
 

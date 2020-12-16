@@ -607,11 +607,11 @@ class iSWAP_Cplr_with_Z_ahead(CompositeGate):
         super().__init__(n_qubit=3, name = 'iSWAP_Cplr')
         self.phi1 = phi1
         self.phi2 = phi2
-        self.add_gate([EulerZGate(self.phi1), IdentityGate(width = 0), EulerZGate(self.phi2)])
         if self.phi1 == 0 and self.phi2 == 0:
             pass
         else:
-            self.add_gate([IdentityGate(width = 0), ZGate_Cplr_iSWAP(), ZGate_TQB_iSWAP()])
+            self.add_gate([EulerZGate(self.phi1), IdentityGate(width = 0), EulerZGate(self.phi2)])
+        self.add_gate([IdentityGate(width = 0), ZGate_Cplr_iSWAP(), ZGate_TQB_iSWAP()])
 
 
     def new_angles(self, phi1, phi2):
